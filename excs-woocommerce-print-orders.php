@@ -106,11 +106,64 @@ class Excs_Print_Orders {
         
     }
     
-    public static function ajax(){
+    public function ajax(){
         
-        print_r('Excs_Print_Orders');
+        pre( $this, 'Excs_Print_Orders' );
         
         die();
+    }
+    
+    /**
+     * CSS comum usado tanto para o preview quanto para impressão
+     * 
+     */
+    protected function css_base(){
+        ?>
+        <style type="text/css">
+        /* CSS common, both print and preview */
+        body {
+            font-family: arial, sans-serif;
+        }
+        </style>
+        <?php
+    }
+    
+    /**
+     * CSS exclusivo para preview
+     * 
+     */
+    protected function css_preview(){
+        ?>
+        <style type="text/css">
+        /* CSS preview only */
+        body {
+            margin: 20px auto;
+            width: 250mm;
+        }
+        </style>
+        <?php
+    }
+    
+    /**
+     * CSS exclusivo para impressão
+     * 
+     */
+    protected function css_print(){
+        ?>
+        <style type="text/css">
+        /* CSS print only */
+        @page {
+            size: Letter;
+            margin: 0;
+        }
+        @media print {
+            html, body {
+                width: 216mm;
+                height: auto;
+            }
+        }
+        </style>
+        <?php
     }
     
     public static function footer(){
