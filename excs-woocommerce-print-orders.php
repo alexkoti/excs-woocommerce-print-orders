@@ -68,10 +68,57 @@ class Excs_Print_Orders {
     var $current_paper = false;
     
     /**
+     * Layouts de etiquetas individuais, Largura X Altura
+     * Lista de modelos pré-determinados que poderão ser escolhidos.
+     * Começar a lista com divisões simples e modelos de etiquetas adesivas pimaco
+     * 
+     */
+    var $layouts = array(
+        'percentage' => array(
+            'name' => 'Simples',
+            'items' => array(
+                '2x2' => array(
+                    'name'         => '2x2',
+                    'per_page'     => 4,
+                ),
+            ),
+        ),
+        'pimaco' => array(
+            'name' => 'Pimaco',
+            'items' => array(
+                '6183' => array(
+                    'name'         => '6183 (10 etiquetas)',
+                    'per_page'     => 10,
+                    'width'        => '101.6mm',
+                    'height'       => '50.8mm',
+                    'page_margins' => '10mm 0 0 3.5mm',
+                    'item_margin'  => '0 5.0mm 0 0',
+                ),
+                '6082' => array(
+                    'name'         => '6082 (14 etiquetas)',
+                    'per_page'     => 14,
+                    'width'        => '101.6mm',
+                    'height'       => '33.9mm',
+                    'page_margins' => '19mm 0 0 6mm',
+                    'item_margin'  => '0',
+                ),
+                '8099F' => array(
+                    'name'         => '8099F (10 etiquetas)',
+                    'per_page'     => 10,
+                    'width'        => '77.79mm',
+                    'height'       => '46.56mm',
+                    'page_margins' => '19mm 19mm 0 19mm',
+                    'item_margin'  => '0 83px 0 0',
+                ),
+            ),
+        ),
+    );
+    
+    /**
      * Layout da etiqueta individual
      * 
      */
-    var $current_layout = '6183';
+    var $current_layout = false;
     
     /**
      * Array de imagens em base64, para serem usadas nas etiquetas individuais
