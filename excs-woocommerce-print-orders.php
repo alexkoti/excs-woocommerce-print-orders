@@ -49,6 +49,18 @@ class Excs_Print_Orders {
     private static $action = 'excs_print_orders';
     
     /**
+     * Definir se é para imprimir apenas o remetente loja
+     * 
+     */
+    private $print_sender = 0;
+    
+    /**
+     * Permitir a opção de imprimir o remetente
+     * 
+     */
+    private $allow_print_sender = false;
+    
+    /**
      * IDs dos pedidos a serem impressos
      * 
      */
@@ -76,7 +88,7 @@ class Excs_Print_Orders {
             'height'       => '297',
             'unit'         => 'mm',
         ),
-        'letter' => array(
+        'Letter' => array(
             'width'        => '216',
             'height'       => '279',
             'unit'         => 'mm',
@@ -197,6 +209,7 @@ class Excs_Print_Orders {
     protected $config = array(
         'paper'              => 'A4',  // tipo de papel
         'per_page'           => 10,
+        'allow_print_sender' => false,
         'layout' => array(
             'group' => 'percentage',
             'item' => '2x2',
@@ -221,6 +234,12 @@ class Excs_Print_Orders {
         $custom_config = apply_filters( 'excs_print_orders_config', $this->config );
         $this->config = wp_parse_args( $custom_config, $this->config );
         
+        // definir se é impressão de remetente
+        $this->allow_print_sender = $this->config['allow_print_sender'];
+        if( isset($_GET['print_sender']) && $this->allow_print_sender == true ){
+            $this->print_sender = boolval( $_GET['print_sender'] );
+        }
+        
         // adicionar layouts extras
         $this->set_layouts();
         
@@ -242,6 +261,12 @@ class Excs_Print_Orders {
             'item_margin'  => $this->layout['item_margin'],
         );
         
+        // definir offset
+        $this->offset = isset($_GET['offset']) ? $_GET['offset'] : 0;
+        if( $this->offset > ($this->per_page - 1) ){
+            $this->offset = ($this->per_page - 1);
+        }
+        
         // definir imagens personalizadas
         if( is_array($this->config['images']) ){
             $this->images = wp_parse_args( $this->config['images'], $this->images );
@@ -252,8 +277,6 @@ class Excs_Print_Orders {
     }
     
     public function ajax(){
-        
-        $sender = false;
         
         ?><!DOCTYPE HTML>
         <html lang="pt_BR">
@@ -267,34 +290,36 @@ class Excs_Print_Orders {
         <body>
             <h1 class="no-print"><?php echo $this->admin_title; ?></h1>
             
-            <form action="<?php echo admin_url('/'); ?>" method="get" class="no-print">
+            <form action="<?php echo admin_url( 'admin-ajax.php' ); ?>" method="get" class="no-print">
                 <input type="hidden" name="action" value="<?php echo self::$action; ?>" />
                 <input type="hidden" name="ids" value="<?php echo implode(',', $this->order_ids); ?>" />
-                <?php if( $sender == 1 ){ ?>
-                <fieldset>
-                    <legend>Imprimir endereços dos pedidos</legend>
-                    <button type="submit" name="sender" value="0">Imprimir destinatários</button>
-                </fieldset>
-                <?php } else { ?>
+                <?php if( $this->print_sender == 0 ){ ?>
                 <fieldset>
                     <legend>Imprimir endereços dos pedidos</legend>
                     Definir início da impressão: 
                     <input type="number" name="offset" value="<?php echo $this->offset; ?>" size="2" min="0" max="<?php echo (int)$this->per_page - 1; ?>" /> 
-                    <button type="submit" name="sender" value="0">Atualizar</button>
+                    <button type="submit" name="print_sender" value="0">Atualizar</button>
                 </fieldset>
+                <?php if( $this->allow_print_sender == true ){ ?>
                 <fieldset>
-                    <legend>OU Imprimir apenas remetente Excelsior</legend>
-                    <button type="submit" name="sender" value="1">Remetente Excelsior</button>
+                    <legend>Trocar para imprimir apenas remetente</legend>
+                    <button type="submit" name="print_sender" value="1">Imprimir remetente</button>
+                </fieldset>
+                <?php } ?>
+                <?php } else { ?>
+                <fieldset>
+                    <legend>Trocar para imprimir endereços dos pedidos</legend>
+                    <button type="submit" name="print_sender" value="0">Imprimir destinatários</button>
                 </fieldset>
                 <?php } ?>
             </form>
             
-            <p class="no-print"><a href="javascript: window.print();">IMPRIMIR</a></p>
+            <p class="no-print"><a href="javascript: window.print();" class="btn btn-print">IMPRIMIR</a></p>
             
             <h2 class="no-print">Preview:</h2>
             
             <?php
-            if( $sender == 0 ){
+            if( $this->print_sender == 0 ){
                 $this->print_pages();
             }
             else{
@@ -316,6 +341,165 @@ class Excs_Print_Orders {
     
     function print_pages(){
         
+        echo '<div class="paper">';
+            $total = 0;
+            $cel = 1;
+            if( $this->offset > 0 ){
+                for( $i = 1; $i <= $this->offset; $i++ ){
+                    echo '<div class="order empty"><span>vazio</span></div>';
+                    if( $cel == 2 ){
+                        //echo '<hr />';
+                        $cel = 1;
+                    }
+                    else{
+                        $cel++;
+                    }
+                    $total++;
+                }
+            }
+            
+            foreach( $this->order_ids as $id ){
+                echo '<div class="order">';
+                $this->print_order( $id );
+                echo '</div>';
+                if( $cel == 2 ){
+                    $cel = 1;
+                }
+                else{
+                    $cel++;
+                }
+                $total++;
+                
+                if( $total % $this->per_page == 0 ){
+                    echo '</div><div class="paper">';
+                }
+            }
+            
+            $empty = ($this->per_page - ($this->offset + count($this->order_ids)));
+            if( $empty > 0 ){
+                for( $n = 1; $n <= $empty; $n++ ){
+                    echo '<div class="order empty"><span>vazio</span></div>';
+                    if( $cel == 2 ){
+                        $cel = 1;
+                    }
+                    else{
+                        $cel++;
+                    }
+                    $total++;
+                }
+            }
+            //pal($total);
+        echo '</div>';
+    }
+    
+    function print_order( $id ){
+        include_once( 'vendors/php-barcode-generator/src/BarcodeGenerator.php');
+        include_once( 'vendors/php-barcode-generator/src/BarcodeGeneratorPNG.php');
+        
+        $order = new WC_Order( $id );
+        
+        $address = $this->get_address( $order );
+        $address = $this->validate_address( $address ); pre($address);
+        $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+        $barcode = base64_encode($generator->getBarcode($address['cep'], $generator::TYPE_CODE_128, 1, 50));
+        
+        $alert = '';
+        
+        $shipping = $order->get_items( 'shipping' );
+        foreach( $shipping as $method ){
+            if( strpos($method['method_id'], 'correios-impresso-normal') !== false ){
+                $alert = '<div class="aviso"><div><strong>Impresso Fechado</strong></div><div>Pode ser aberto <br />pela ECT</div><div>CORREIOS</div></div>';
+            }
+        }
+        
+        echo "
+        <div class='order-inner'>
+            <div class='destinatario'>
+                <div class='barcode'>
+                    <img src='data:image/png;base64,{$barcode}' /><br />
+                    {$address['cep']}
+                </div>
+                <div class='address'>
+                    <strong>Destinatário<br /></strong>
+                    <span class='name'>{$address['nome']}<br /></span>
+                    <span class='street'>{$address['logradouro']}{$address['complemento']}<br /></span>
+                    <span class='company'>{$address['empresa']}</span>
+                    <span class='neighbor'>{$address['bairro']}<br /></span>
+                    <span class='city-state'>{$address['cidade']} / {$address['uf']}<br /></span>
+                    <span class='zip'>{$address['cep']}</span>
+                </div>
+            </div>
+            {$alert}
+        </div>";
+    }
+    
+    function get_address( $order ){
+        
+        $order_data = $order->get_data();
+        $order_meta_data = $order->get_meta_data();
+        //pre($order_data, 'order_data', false);
+        //pre($order_meta_data, 'order_meta_data', false);
+        //pre($order_data['shipping'], '$order_data[shipping]', false);
+        
+        if( empty( $order_data['shipping']) ){
+            $number       = $this->get_address_meta_data( $order_meta_data, '_billing_number' );
+            $neighborhood = $this->get_address_meta_data( $order_meta_data, '_billing_neighborhood' );
+            $address = array(
+                'nome'           => "{$order_data['billing']['first_name']} {$order_data['billing']['last_name']}<br />",
+                'empresa'        => empty($order_data['billing']['company']) ? '' : " - {$order_data['billing']['company']}",
+                'logradouro'     => "{$order_data['billing']['address_1']} {$number}",
+                'complemento'    => empty($order_data['billing']['address_2']) ? '' : ", {$order_data['billing']['address_2']}",
+                'bairro'         => empty($neighborhood) ? '' : " - {$neighborhood}",
+                'cidade'         => $order_data['billing']['city'],
+                'uf'             => empty($order_data['billing']['state']) ? '' : " - {$order_data['billing']['state']}",
+                'cep'            => $order_data['billing']['postcode'],
+            );
+        }
+        else{
+            $number       = $this->get_address_meta_data( $order_meta_data, '_shipping_number' );
+            $neighborhood = $this->get_address_meta_data( $order_meta_data, '_shipping_neighborhood' );
+            $address = array(
+                'nome'           => "{$order_data['shipping']['first_name']} {$order_data['shipping']['last_name']}<br />",
+                'empresa'        => empty($order_data['shipping']['company']) ? '' : " - {$order_data['shipping']['company']}",
+                'logradouro'     => "{$order_data['shipping']['address_1']} {$number}",
+                'complemento'    => empty($order_data['shipping']['address_2']) ? '' : ", {$order_data['shipping']['address_2']}",
+                'bairro'         => empty($neighborhood) ? '' : " - {$neighborhood}",
+                'cidade'         => $order_data['shipping']['city'],
+                'uf'             => empty($order_data['shipping']['state']) ? '' : " - {$order_data['shipping']['state']}",
+                'cep'            => $order_data['shipping']['postcode'],
+            );
+        }
+        return $address;
+    }
+    
+    /**
+     * Validar dados do endereço para certificar de que não existem campos faltantes.
+     * Exibe um texto de alerta destacado para a visualização no navegador. A versão impressa não exibe o alerta.
+     * 
+     */
+    function validate_address( $address ){
+        $optional = array(
+            'empresa',
+            'complemento',
+        );
+        foreach( $address as $key => $value ){
+            if( !in_array($key, $optional) ){
+                $cleanned = trim($value);
+                if( empty($cleanned) or ($key == 'logradouro' and strlen($value) < 4) ){
+                    $address[ $key ] = "<span class='empty-data' style='font-size:12pt;color:red;text-transform:uppercase;'>[{$key} VAZIO]</span>{$value}";
+                }
+            }
+        }
+        return $address;
+    }
+    
+    function get_address_meta_data( $meta_data, $key ){
+        foreach( $meta_data as $md ){
+            $d = $md->get_data();
+            if( $d['key'] == $key ){
+                return $d['value'];
+            }
+        }
     }
     
     function print_sender(){
@@ -333,6 +517,29 @@ class Excs_Print_Orders {
         body {
             font-family: arial, sans-serif;
         }
+        
+        .order {
+            float: left;
+            position: relative;
+            border: 1px dotted #e2e2e2;
+        }
+        
+        .order-inner {
+            padding: 2mm;
+            position: relative;
+        }
+        
+        .empty {
+            text-align: center;
+        }
+        
+        hr {
+            clear: both;
+            display: block;
+            margin: 0;
+            visibility: hidden;
+            width: 100%;
+        }
         </style>
         <?php
     }
@@ -349,6 +556,53 @@ class Excs_Print_Orders {
             margin: 20px auto;
             width: 250mm;
         }
+        
+        fieldset {
+            border: 1px solid #0085ba;
+            margin: 0 0 30px;
+        }
+        
+        button, .btn {
+            display: inline-block;
+            text-decoration: none;
+            font-size: 13px;
+            line-height: 26px;
+            height: 28px;
+            margin: 0;
+            padding: 0 10px 1px;
+            cursor: pointer;
+            border-width: 1px;
+            border-style: solid;
+            -webkit-appearance: none;
+            -webkit-border-radius: 3px;
+            border-radius: 3px;
+            white-space: nowrap;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            background: #0085ba;
+            border-color: #0073aa #006799 #006799;
+            -webkit-box-shadow: 0 1px 0 #006799;
+            box-shadow: 0 1px 0 #006799;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 0 -1px 1px #006799, 1px 0 1px #006799, 0 1px 1px #006799, -1px 0 1px #006799;
+        }
+        
+        .btn-print {
+            background-color: green;
+        }
+        
+        input[type=text], input[type=number]{
+            border: 1px solid #ddd;
+            box-shadow: inset 0 1px 2px rgba( 0, 0, 0, 0.07 );
+            background-color: #fff;
+            color: #32373c;
+            line-height: 26px;
+            text-align: right;
+            outline: none;
+            transition: 0.05s border-color ease-in-out;
+        }
         </style>
         <?php
     }
@@ -362,13 +616,46 @@ class Excs_Print_Orders {
         <style type="text/css">
         /* CSS print only */
         @page {
-            size: Letter;
+            size: <?php echo $this->paper; ?>;
             margin: 0;
         }
         @media print {
             html, body {
-                width: 216mm;
+                width: <?php echo $this->papers[ $this->paper ]['width']; ?>;
                 height: auto;
+            }
+            
+            .paper {
+                height: auto !important;
+                width: auto !important;
+                margin: auto !important;
+                padding: auto !important;
+                margin: 0;
+                border: initial;
+                border-radius: initial;
+                width: initial;
+                min-height: initial;
+                box-shadow: initial;
+                background: initial;
+                page-break-after: always;
+                outline: none;
+            }
+            
+            .order {
+                outline: 1px dotted #ccc;
+                outline: none;
+            }
+            
+            .empty span {
+                display: none;
+            }
+            
+            .no-print {
+                display: none;
+            }
+            
+            .empty-data {
+                display: none;
             }
         }
         </style>
@@ -401,6 +688,10 @@ class Excs_Print_Orders {
         }
     }
     
+    /**
+     * Adicionar grupo de layout
+     * 
+     */
     protected function add_layout_group( $slug, $name ){
         if( !isset( $this->layouts[$slug] ) ){
             $this->layouts[$slug] = array(
@@ -410,6 +701,10 @@ class Excs_Print_Orders {
         }
     }
     
+    /**
+     * Adicionar layout dentro de grupo
+     * 
+     */
     protected function add_layout_item( $group, $slug, $args ){
         if( isset( $this->layouts[$group] ) && !isset( $this->layouts[$group]['items'][$slug] ) ){
             $this->layouts[$group]['items'][$slug] = array(
