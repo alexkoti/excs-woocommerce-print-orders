@@ -40,6 +40,7 @@ function excs_print_orders_ajax_init(){
  *  - admin page para configurar opções
  *  - validador de CSS
  *  - adicionar opção de google-fonts
+ *  - tradução para países
  * 
  */
 class Excs_Print_Orders {
@@ -581,8 +582,7 @@ class Excs_Print_Orders {
         }
         
         $_country            = wc_get_base_location();
-        $country             = WC()->countries->countries[ $_country['country'] ];
-        $store_info['state'] = WC()->countries->states[ $_country['country'] ][ $_country['state'] ];
+        $store_info['state'] = $_country['state'];
         
         return $store_info;
     }
@@ -597,6 +597,7 @@ class Excs_Print_Orders {
         /* CSS common, both print and preview */
         body {
             font-family: arial, sans-serif;
+            font-size: 10.5pt;
         }
         
         .paper {
