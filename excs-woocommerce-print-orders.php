@@ -120,7 +120,7 @@ class Excs_Print_Orders {
                     'name'         => '2x2',
                     'paper'        => 'A4',
                     'per_page'     => 4,
-                    'page_margins' => '0 0 0 0',
+                    'page_margins' => '10mm 10mm 10mm 10mm',
                     'width'        => '50%',
                     'height'       => '50%',
                     'item_margin'  => '0 0 0 0',
@@ -263,8 +263,9 @@ class Excs_Print_Orders {
         $this->paper = $this->papers[ $this->layout['paper'] ];
         
         if( $this->config['layout']['group'] == 'percentage' ){
+            $margim = str_replace( 'mm', '', explode( ' ', $this->layout['page_margins'] ) );
             $divider = str_replace('%', '', $this->layout['height']);
-            $this->layout['height'] = ( ($divider / 100) * $this->paper['height'] ) . 'mm';
+            $this->layout['height'] = ( ($divider / 100) * ($this->paper['height'] - $margim[0] - $margim[2]) ) . 'mm';
         }
         
         // quantidade de etiquetas por página
@@ -604,7 +605,6 @@ class Excs_Print_Orders {
             width: <?php echo $this->paper['width']; ?>mm;
             height: <?php echo $this->paper['height']; ?>mm;
             margin: 10px auto;
-            margin: 10px 0;
             box-sizing: border-box;
             padding: <?php echo $this->layout['page_margins']; ?>;
         }
