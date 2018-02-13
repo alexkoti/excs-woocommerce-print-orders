@@ -538,7 +538,7 @@ class Excs_Print_Orders {
             $address[] = "<span class='neighbor'>{$store_info['woocommerce_store_address_2']}</span>";
         }
         $address[] = "<span class='zip'>{$store_info['woocommerce_store_postcode']}</span>";
-        $address[] = "<span class='city-state'>{$store_info['woocommerce_store_city']}/{$store_info['state']} - Brasil</span>";
+        $address[] = "<span class='city-state'>{$store_info['woocommerce_store_city']} / {$store_info['state']} - Brasil</span>";
         
         $address = implode( '<br />', $address );
         
