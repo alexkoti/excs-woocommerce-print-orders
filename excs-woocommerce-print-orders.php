@@ -882,10 +882,18 @@ class Excs_Print_Orders {
                 $('<a href="<?php echo $url; ?>" class="button" target="_blank" id="excs-print-orders-button">Imprimir Pedidos Selecionados</a>').insertAfter('#post-query-submit');
                 
                 // botão individual
-                $('mark.tips').each(function( index ){
-                    var id = $(this).closest('tr').attr('id').replace('post-', '');
-                    $('<a href="<?php echo $url; ?>&ids=' + id + '" class="button print-barcode" target="_blank" title="imprimir etiqueta individual"></a>').insertAfter( $(this) );
-                });
+                if( $('.column-order_number .excs-order-items').length ){
+                    $('.column-order_number .excs-order-items').each(function( index ){
+                        var id = $(this).closest('tr').attr('id').replace('post-', '');
+                        $('<a href="<?php echo $url; ?>&ids=' + id + '" class="button print-barcode" target="_blank" title="imprimir etiqueta individual">Etiqueta </a>').insertAfter( $(this) );
+                    });
+                }
+                else{
+                    $('mark.tips').each(function( index ){
+                        var id = $(this).closest('tr').attr('id').replace('post-', '');
+                        $('<a href="<?php echo $url; ?>&ids=' + id + '" class="button print-barcode" target="_blank" title="imprimir etiqueta individual"></a>').insertAfter( $(this) );
+                    });
+                }
             });
         </script>
         <style type="text/css">
