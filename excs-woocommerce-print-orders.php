@@ -84,11 +84,13 @@ class Excs_Print_Orders {
      */
     protected $papers = array(
         'A4' => array(
+            'name'         => 'A4',
             'width'        => '210',
             'height'       => '297',
             'unit'         => 'mm',
         ),
         'Letter' => array(
+            'name'         => 'Letter',
             'width'        => '216',
             'height'       => '279',
             'unit'         => 'mm',
@@ -117,7 +119,7 @@ class Excs_Print_Orders {
                     'per_page'     => 4,
                     'page_margins' => '0 0 0 0',
                     'width'        => '50%',
-                    'height'       => '400px',
+                    'height'       => '50%',
                     'item_margin'  => '0 0 0 0',
                 ),
             ),
@@ -249,7 +251,12 @@ class Excs_Print_Orders {
         }
         
         // definir papel
-        $this->paper = $this->layout['paper'];
+        $this->paper = $this->papers[ $this->layout['paper'] ];
+        
+        if( $this->config['layout']['group'] == 'percentage' ){
+            $divider = str_replace('%', '', $this->layout['height']);
+            $this->layout['height'] = ( ($divider / 100) * $this->paper['height'] ) . 'mm';
+        }
         
         // quantidade de etiquetas por página
         $this->per_page = $this->layout['per_page'];
@@ -327,10 +334,12 @@ class Excs_Print_Orders {
             }
             ?>
             
+            <div class="no-print">
             <?php 
             pre( $this->config, 'excs_print_orders_config', false );
             pre( $this, 'Excs_Print_Orders', false );
             ?>
+            </div>
             
         </body>
         </html>
@@ -399,7 +408,8 @@ class Excs_Print_Orders {
         $order = new WC_Order( $id );
         
         $address = $this->get_address( $order );
-        $address = $this->validate_address( $address ); pre($address);
+        $address = $this->validate_address( $address );
+        //pre($address);
         $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
         $barcode = base64_encode($generator->getBarcode($address['cep'], $generator::TYPE_CODE_128, 1, 50));
         
@@ -445,7 +455,7 @@ class Excs_Print_Orders {
             $number       = $this->get_address_meta_data( $order_meta_data, '_billing_number' );
             $neighborhood = $this->get_address_meta_data( $order_meta_data, '_billing_neighborhood' );
             $address = array(
-                'nome'           => "{$order_data['billing']['first_name']} {$order_data['billing']['last_name']}<br />",
+                'nome'           => "{$order_data['billing']['first_name']} {$order_data['billing']['last_name']}",
                 'empresa'        => empty($order_data['billing']['company']) ? '' : " - {$order_data['billing']['company']}",
                 'logradouro'     => "{$order_data['billing']['address_1']} {$number}",
                 'complemento'    => empty($order_data['billing']['address_2']) ? '' : ", {$order_data['billing']['address_2']}",
@@ -459,7 +469,7 @@ class Excs_Print_Orders {
             $number       = $this->get_address_meta_data( $order_meta_data, '_shipping_number' );
             $neighborhood = $this->get_address_meta_data( $order_meta_data, '_shipping_neighborhood' );
             $address = array(
-                'nome'           => "{$order_data['shipping']['first_name']} {$order_data['shipping']['last_name']}<br />",
+                'nome'           => "{$order_data['shipping']['first_name']} {$order_data['shipping']['last_name']}",
                 'empresa'        => empty($order_data['shipping']['company']) ? '' : " - {$order_data['shipping']['company']}",
                 'logradouro'     => "{$order_data['shipping']['address_1']} {$number}",
                 'complemento'    => empty($order_data['shipping']['address_2']) ? '' : ", {$order_data['shipping']['address_2']}",
@@ -503,7 +513,64 @@ class Excs_Print_Orders {
     }
     
     function print_sender(){
+        $logo = '';
+        $store_info = $this->get_sender();
         
+        $address = array();
+        $address[] = "<span class='name'>{$store_info['blogname']}</span>";
+        $address[] = "<span class='street'>{$store_info['woocommerce_store_address']}</span>";
+        if( !empty($store_info['woocommerce_store_address_2']) ){
+            $address[] = "<span class='neighbor'>{$store_info['woocommerce_store_address_2']}</span>";
+        }
+        $address[] = "<span class='zip'>{$store_info['woocommerce_store_postcode']}</span>";
+        $address[] = "<span class='city-state'>{$store_info['woocommerce_store_city']}/{$store_info['state']} - Brasil</span>";
+        
+        $address = implode( '<br />', $address );
+        
+        if( !empty($this->images['logo']) ){
+            $logo = "<div class='logo'><img src='{$this->images['logo']}' alt='' /></div>";
+        }
+        
+        echo '<div class="paper">';
+        for( $i = 1; $i <= $this->per_page; $i++ ){
+            echo "
+            <div class='order'>
+                <div class='order-inner layout'>
+                    {$logo}
+                    <div class='remetente'>
+                        <div class='address'>
+                            <strong>Remetente<br /></strong>
+                            {$address}
+                        </div>
+                    </div>
+                </div>
+            </div>";
+        }
+        echo '</div>';
+    }
+    
+    /**
+     * Montar dados do remetente
+     * 
+     */
+    protected function get_sender(){
+        
+        $store_info = array(
+            'blogname'                    => '',
+            'woocommerce_store_address'   => '',
+            'woocommerce_store_address_2' => '',
+            'woocommerce_store_postcode'  => '',
+            'woocommerce_store_city'      => '',
+        );
+        foreach( $store_info as $k => $v ){
+            $store_info[ $k ] = get_option( $k );
+        }
+        
+        $_country            = wc_get_base_location();
+        $country             = WC()->countries->countries[ $_country['country'] ];
+        $store_info['state'] = WC()->countries->states[ $_country['country'] ][ $_country['state'] ];
+        
+        return $store_info;
     }
     
     /**
@@ -521,12 +588,25 @@ class Excs_Print_Orders {
         .order {
             float: left;
             position: relative;
-            border: 1px dotted #e2e2e2;
+            width: <?php echo $this->layout['width']; ?>;
+            height: <?php echo $this->layout['height']; ?>;
         }
         
         .order-inner {
             padding: 2mm;
             position: relative;
+        }
+        
+        .aviso {
+            border: 2px solid #000;
+            text-align:center;
+            font-size: 8pt;
+            clear: both;
+            padding: 0 5px;
+            width: 110px;
+        }
+        .aviso div {
+            margin: 8px 0;
         }
         
         .empty {
@@ -555,6 +635,19 @@ class Excs_Print_Orders {
         body {
             margin: 20px auto;
             width: 250mm;
+        }
+        
+        .paper {
+            width: <?php echo $this->paper['width']; ?>mm;
+            height: <?php echo $this->paper['height']; ?>mm;
+            margin: 10px auto;
+            box-sizing: border-box;
+            padding: <?php echo $this->layout['page_margins']; ?>;
+            outline: 1px dotted green;
+        }
+        
+        .order {
+            outline: 1px dotted #e2e2e2;
         }
         
         fieldset {
@@ -616,13 +709,14 @@ class Excs_Print_Orders {
         <style type="text/css">
         /* CSS print only */
         @page {
-            size: <?php echo $this->paper; ?>;
+            size: <?php echo $this->paper['name']; ?>;
             margin: 0;
         }
         @media print {
             html, body {
-                width: <?php echo $this->papers[ $this->paper ]['width']; ?>;
                 height: auto;
+                margin: 0;
+                width: <?php echo $this->paper['width']; ?>;
             }
             
             .paper {
@@ -638,12 +732,12 @@ class Excs_Print_Orders {
                 box-shadow: initial;
                 background: initial;
                 page-break-after: always;
-                outline: none;
+                overflow: hidden;
             }
             
             .order {
-                outline: 1px dotted #ccc;
                 outline: none;
+                outline: 1px dotted #ccc;
             }
             
             .empty span {
