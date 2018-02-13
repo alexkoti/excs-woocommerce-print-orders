@@ -350,7 +350,7 @@ class Excs_Print_Orders {
     
     function print_pages(){
         
-        echo '<div class="paper">';
+        echo "<div class='paper paper-{$this->paper['name']}'>";
             $total = 0;
             $cel = 1;
             if( $this->offset > 0 ){
@@ -368,7 +368,7 @@ class Excs_Print_Orders {
             }
             
             foreach( $this->order_ids as $id ){
-                echo '<div class="order">';
+                echo "<div class='order layout-{$this->layout['name']}''>";
                 $this->print_order( $id );
                 echo '</div>';
                 if( $cel == 2 ){
@@ -380,14 +380,14 @@ class Excs_Print_Orders {
                 $total++;
                 
                 if( $total % $this->per_page == 0 ){
-                    echo '</div><div class="paper">';
+                    echo "</div><div class='paper paper-{$this->paper['name']}'>";
                 }
             }
             
             $empty = ($this->per_page - ($this->offset + count($this->order_ids)));
             if( $empty > 0 ){
                 for( $n = 1; $n <= $empty; $n++ ){
-                    echo '<div class="order empty"><span>vazio</span></div>';
+                    echo "<div class='order empty paper-{$this->paper['name']} layout-{$this->layout['name']}''><span>vazio</span></div>";
                     if( $cel == 2 ){
                         $cel = 1;
                     }
@@ -422,7 +422,7 @@ class Excs_Print_Orders {
             }
         }
         
-        echo "
+        $output = "
         <div class='order-inner'>
             <div class='destinatario'>
                 <div class='barcode'>
@@ -441,6 +441,7 @@ class Excs_Print_Orders {
             </div>
             {$alert}
         </div>";
+        echo apply_filters( 'excs_print_orders_customer_label',  $output, $order, $address, $barcode, $alert );
     }
     
     function get_address( $order ){
@@ -459,7 +460,7 @@ class Excs_Print_Orders {
                 'empresa'        => empty($order_data['billing']['company']) ? '' : " - {$order_data['billing']['company']}",
                 'logradouro'     => "{$order_data['billing']['address_1']} {$number}",
                 'complemento'    => empty($order_data['billing']['address_2']) ? '' : ", {$order_data['billing']['address_2']}",
-                'bairro'         => empty($neighborhood) ? '' : " - {$neighborhood}",
+                'bairro'         => empty($neighborhood) ? '' : "{$neighborhood}",
                 'cidade'         => $order_data['billing']['city'],
                 'uf'             => empty($order_data['billing']['state']) ? '' : " - {$order_data['billing']['state']}",
                 'cep'            => $order_data['billing']['postcode'],
@@ -473,7 +474,7 @@ class Excs_Print_Orders {
                 'empresa'        => empty($order_data['shipping']['company']) ? '' : " - {$order_data['shipping']['company']}",
                 'logradouro'     => "{$order_data['shipping']['address_1']} {$number}",
                 'complemento'    => empty($order_data['shipping']['address_2']) ? '' : ", {$order_data['shipping']['address_2']}",
-                'bairro'         => empty($neighborhood) ? '' : " - {$neighborhood}",
+                'bairro'         => empty($neighborhood) ? '' : "{$neighborhood}",
                 'cidade'         => $order_data['shipping']['city'],
                 'uf'             => empty($order_data['shipping']['state']) ? '' : " - {$order_data['shipping']['state']}",
                 'cep'            => $order_data['shipping']['postcode'],
@@ -531,20 +532,20 @@ class Excs_Print_Orders {
             $logo = "<div class='logo'><img src='{$this->images['logo']}' alt='' /></div>";
         }
         
-        echo '<div class="paper">';
+        echo "<div class='paper paper-{$this->paper['name']}'>";
         for( $i = 1; $i <= $this->per_page; $i++ ){
-            echo "
-            <div class='order'>
-                <div class='order-inner layout'>
-                    {$logo}
-                    <div class='remetente'>
-                        <div class='address'>
-                            <strong>Remetente<br /></strong>
-                            {$address}
-                        </div>
+            $output = "
+            <div class='order-inner'>
+                {$logo}
+                <div class='remetente'>
+                    <div class='address'>
+                        <strong>Remetente<br /></strong>
+                        {$address}
                     </div>
                 </div>
             </div>";
+            $output = apply_filters( 'excs_print_orders_shop_label',  $output, $store_info, $this );
+            echo "<div class='order paper-{$this->paper['name']} layout-{$this->layout['name']}'>{$output}</div>";
         }
         echo '</div>';
     }
@@ -590,6 +591,7 @@ class Excs_Print_Orders {
             position: relative;
             width: <?php echo $this->layout['width']; ?>;
             height: <?php echo $this->layout['height']; ?>;
+            position: relative;
         }
         
         .order-inner {
