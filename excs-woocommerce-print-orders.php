@@ -38,6 +38,8 @@ function excs_print_orders_ajax_init(){
  * @todo:
  *  - verificar nível de usuário
  *  - admin page para configurar opções
+ *  - validador de CSS
+ *  - adicionar opção de google-fonts
  * 
  */
 class Excs_Print_Orders {
@@ -225,6 +227,12 @@ class Excs_Print_Orders {
             'layout_select'      => true,       // habilitar dropdown para seleção de layout, como modelos de etiquetas pimaco
             'print_invoice'      => true,       // imprimir página de declaração de contepúdo dos correios
         ),
+        'css' => array(
+            'base'    => '',
+            'preview' => '',
+            'print'   => '',
+            'file'    => '',
+        ),
     );
     
     function __construct(){
@@ -234,7 +242,7 @@ class Excs_Print_Orders {
         }
         
         $custom_config = apply_filters( 'excs_print_orders_config', $this->config );
-        $this->config = wp_parse_args( $custom_config, $this->config );
+        $this->config = array_replace_recursive( $this->config, $custom_config );
         
         // definir se é impressão de remetente
         $this->allow_print_sender = $this->config['allow_print_sender'];
@@ -290,9 +298,14 @@ class Excs_Print_Orders {
         <head>
             <meta charset="UTF-8">
             <title><?php echo $this->admin_title; ?></title>
-            <?php echo $this->css_base(); ?>
-            <?php echo $this->css_preview(); ?>
-            <?php echo $this->css_print(); ?>
+            <?php
+            echo $this->css_base();
+            echo $this->css_preview();
+            echo $this->css_print();
+            if( !empty($this->config['css']['file']) ){
+                echo "<link rel='stylesheet' href='{$this->config['css']['file']}' />";
+            }
+            ?>
         </head>
         <body>
             <h1 class="no-print"><?php echo $this->admin_title; ?></h1>
@@ -323,7 +336,7 @@ class Excs_Print_Orders {
             
             <p class="no-print"><a href="javascript: window.print();" class="btn btn-print">IMPRIMIR</a></p>
             
-            <h2 class="no-print">Preview:</h2>
+            <h2 class="no-print" id="preview-title">Preview:</h2>
             
             <?php
             if( $this->print_sender == 0 ){
@@ -580,10 +593,19 @@ class Excs_Print_Orders {
      */
     protected function css_base(){
         ?>
-        <style type="text/css">
+        <style type="text/css" id="css-base">
         /* CSS common, both print and preview */
         body {
             font-family: arial, sans-serif;
+        }
+        
+        .paper {
+            width: <?php echo $this->paper['width']; ?>mm;
+            height: <?php echo $this->paper['height']; ?>mm;
+            margin: 10px auto;
+            margin: 10px 0;
+            box-sizing: border-box;
+            padding: <?php echo $this->layout['page_margins']; ?>;
         }
         
         .order {
@@ -591,12 +613,19 @@ class Excs_Print_Orders {
             position: relative;
             width: <?php echo $this->layout['width']; ?>;
             height: <?php echo $this->layout['height']; ?>;
+            margin: <?php echo $this->layout['item_margin']; ?>;
             position: relative;
         }
         
         .order-inner {
             padding: 2mm;
             position: relative;
+        }
+        
+        .barcode {
+            display: inline-block;
+            font-size: 10pt;
+            text-align: center;
         }
         
         .aviso {
@@ -622,6 +651,9 @@ class Excs_Print_Orders {
             visibility: hidden;
             width: 100%;
         }
+        
+        <?php echo $this->config['css']['base']; ?>
+        
         </style>
         <?php
     }
@@ -632,7 +664,7 @@ class Excs_Print_Orders {
      */
     protected function css_preview(){
         ?>
-        <style type="text/css">
+        <style type="text/css" id="css-preview">
         /* CSS preview only */
         body {
             margin: 20px auto;
@@ -640,16 +672,11 @@ class Excs_Print_Orders {
         }
         
         .paper {
-            width: <?php echo $this->paper['width']; ?>mm;
-            height: <?php echo $this->paper['height']; ?>mm;
-            margin: 10px auto;
-            box-sizing: border-box;
-            padding: <?php echo $this->layout['page_margins']; ?>;
             outline: 1px dotted green;
         }
         
         .order {
-            outline: 1px dotted #e2e2e2;
+            outline: 1px dotted red;
         }
         
         fieldset {
@@ -698,6 +725,9 @@ class Excs_Print_Orders {
             outline: none;
             transition: 0.05s border-color ease-in-out;
         }
+        
+        <?php echo $this->config['css']['preview']; ?>
+        
         </style>
         <?php
     }
@@ -708,7 +738,7 @@ class Excs_Print_Orders {
      */
     protected function css_print(){
         ?>
-        <style type="text/css">
+        <style type="text/css" id="css-print">
         /* CSS print only */
         @page {
             size: <?php echo $this->paper['name']; ?>;
@@ -754,6 +784,9 @@ class Excs_Print_Orders {
                 display: none;
             }
         }
+        
+        <?php echo $this->config['css']['print']; ?>
+        
         </style>
         <?php
     }
