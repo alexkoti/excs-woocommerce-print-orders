@@ -41,10 +41,17 @@ function excs_print_orders_ajax_init(){
  *  - validador de CSS
  *  - adicionar opção de google-fonts
  *  - invoice padrão mais simples + adicionar invoice correios separadamente
+ *  - separar exibição dos items agrupados ou separados
  *  - tradução para países
  * 
  */
 class Excs_Print_Orders {
+    
+    /**
+     * Cópia do $wp_locale
+     * 
+     */
+    protected $locale = array();
     
     /**
      * Ação do formulário, que irá recarregar a página com as novas configurações, é o mesmo name da action ajax
@@ -56,13 +63,19 @@ class Excs_Print_Orders {
      * Definir se é para imprimir apenas o remetente loja
      * 
      */
-    private $print_sender = 0;
+    protected $print_sender = 0;
     
     /**
      * Permitir a opção de imprimir o remetente
      * 
      */
-    private $allow_print_sender = false;
+    protected $allow_print_sender = false;
+    
+    /**
+     * Informações da loja/remetente
+     * 
+     */
+    protected $store_info = array();
     
     /**
      * IDs dos pedidos a serem impressos
@@ -214,6 +227,10 @@ class Excs_Print_Orders {
     
     protected $print_invoice = true;
     
+    protected $invoice_group_items = true;
+    
+    protected $invoice_group_name = '';
+    
     /**
      * Configuração da impressão
      * 
@@ -230,10 +247,12 @@ class Excs_Print_Orders {
             'logo' => false,
         ),
         'admin' => array(
-            'title'              => 'Imprimir Etiquetas de endereços dos pedidos',
-            'individual_buttons' => true,       // botões de impressão individuais para cada pedido
-            'layout_select'      => true,       // habilitar dropdown para seleção de layout, como modelos de etiquetas pimaco
-            'print_invoice'      => true,       // imprimir página de declaração de contepúdo dos correios
+            'title'               => 'Imprimir Etiquetas de endereços dos pedidos',
+            'individual_buttons'  => true,       // botões de impressão individuais para cada pedido
+            'layout_select'       => true,       // habilitar dropdown para seleção de layout, como modelos de etiquetas pimaco
+            'print_invoice'       => true,       // imprimir página de declaração de contepúdo dos correios
+            'invoice_group_items' => true,       // agrupar items na declaração
+            'invoice_group_name'  => '',         // nome para agrupamento na declaração
         ),
         'css' => array(
             'base'    => '',
@@ -250,6 +269,8 @@ class Excs_Print_Orders {
     protected $orders = array();
     
     function __construct(){
+        global $wp_locale;
+        $this->locale = $wp_locale;
         
         if( isset($_GET['ids']) ){
             $this->order_ids = explode(',', $_GET['ids']);
@@ -304,13 +325,18 @@ class Excs_Print_Orders {
         }
         
         // definir configurações da página do admin
-        $this->admin_title        = $this->config['admin']['title'];
-        $this->individual_buttons = $this->config['admin']['individual_buttons'];
-        $this->layout_select      = $this->config['admin']['layout_select'];
-        $this->print_invoice      = $this->config['admin']['print_invoice'];
+        $this->admin_title         = $this->config['admin']['title'];
+        $this->individual_buttons  = $this->config['admin']['individual_buttons'];
+        $this->layout_select       = $this->config['admin']['layout_select'];
+        $this->print_invoice       = $this->config['admin']['print_invoice'];
+        $this->invoice_group_items = $this->config['admin']['invoice_group_items'];
+        $this->invoice_group_name  = $this->config['admin']['invoice_group_name'];
         
         // definir configurações do código de barras
         $this->barcode_config = $this->config['barcode_config'];
+        
+        // definir informações da loja/remtente
+        $this->set_sender();
     }
     
     public function ajax(){
@@ -418,7 +444,7 @@ class Excs_Print_Orders {
                 }
                 $total++;
                 
-                if( $total % $this->per_page == 0 ){
+                if( $total % $this->per_page == 0 && $total != count($this->order_ids) ){
                     echo "</div><div class='paper paper-{$this->paper['name']}'>";
                 }
             }
@@ -449,9 +475,12 @@ class Excs_Print_Orders {
         // guardar o pedido em orders
         $this->orders[ $id ] = $order;
         
+        // buscar informações de endereço
         $address = $this->get_address( $order );
-        $address = $this->validate_address( $address );
+        // guardar informações de endereço para serem usadas no invoice
+        $order->address_print = $address;
         //pre($address);
+        
         $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
         $barcode = base64_encode($generator->getBarcode($address['cep'], $generator::TYPE_CODE_128, $this->barcode_config['width_factor'], $this->barcode_config['height']));
         
@@ -518,10 +547,11 @@ class Excs_Print_Orders {
                 'complemento'    => empty($order_data['shipping']['address_2']) ? '' : ", {$order_data['shipping']['address_2']}",
                 'bairro'         => empty($neighborhood) ? '' : "{$neighborhood}",
                 'cidade'         => $order_data['shipping']['city'],
-                'uf'             => empty($order_data['shipping']['state']) ? '' : " - {$order_data['shipping']['state']}",
+                'uf'             => empty($order_data['shipping']['state']) ? '' : $order_data['shipping']['state'],
                 'cep'            => $order_data['shipping']['postcode'],
             );
         }
+        $address = $this->validate_address( $address );
         return $address;
     }
     
@@ -557,16 +587,15 @@ class Excs_Print_Orders {
     
     function print_sender(){
         $logo = '';
-        $store_info = $this->get_sender();
         
         $address = array();
-        $address[] = "<span class='name'>{$store_info['blogname']}</span>";
-        $address[] = "<span class='street'>{$store_info['woocommerce_store_address']}</span>";
-        if( !empty($store_info['woocommerce_store_address_2']) ){
-            $address[] = "<span class='neighbor'>{$store_info['woocommerce_store_address_2']}</span>";
+        $address[] = "<span class='name'>{$this->store_info['blogname']}</span>";
+        $address[] = "<span class='street'>{$this->store_info['woocommerce_store_address']}</span>";
+        if( !empty($this->store_info['woocommerce_store_address_2']) ){
+            $address[] = "<span class='neighbor'>{$this->store_info['woocommerce_store_address_2']}</span>";
         }
-        $address[] = "<span class='zip'>{$store_info['woocommerce_store_postcode']}</span>";
-        $address[] = "<span class='city-state'>{$store_info['woocommerce_store_city']} / {$store_info['state']} - Brasil</span>";
+        $address[] = "<span class='zip'>{$this->store_info['woocommerce_store_postcode']}</span>";
+        $address[] = "<span class='city-state'>{$this->store_info['woocommerce_store_city']} / {$this->store_info['state']} - Brasil</span>";
         
         $address = implode( '<br />', $address );
         
@@ -586,7 +615,7 @@ class Excs_Print_Orders {
                     </div>
                 </div>
             </div>";
-            $output = apply_filters( 'excs_print_orders_shop_label',  $output, $store_info, $this );
+            $output = apply_filters( 'excs_print_orders_shop_label',  $output, $this->store_info, $this );
             echo "<div class='order paper-{$this->paper['name']} layout-{$this->layout['name']}'>{$output}</div>";
         }
         echo '</div>';
@@ -596,7 +625,7 @@ class Excs_Print_Orders {
      * Montar dados do remetente
      * 
      */
-    protected function get_sender(){
+    protected function set_sender(){
         
         $store_info = array(
             'blogname'                    => '',
@@ -604,6 +633,7 @@ class Excs_Print_Orders {
             'woocommerce_store_address_2' => '',
             'woocommerce_store_postcode'  => '',
             'woocommerce_store_city'      => '',
+            'woocommerce_store_cpf_cnpj'  => '',
         );
         foreach( $store_info as $k => $v ){
             $store_info[ $k ] = get_option( $k );
@@ -612,7 +642,7 @@ class Excs_Print_Orders {
         $_country            = wc_get_base_location();
         $store_info['state'] = $_country['state'];
         
-        return $store_info;
+        $this->store_info = $store_info;
     }
     
     /**
@@ -635,9 +665,29 @@ class Excs_Print_Orders {
         
         $invoice = " ==== {$order->get_id()} ====";
         
+        $invoice_info = array(
+            'signature' => array(
+                'day'      => date('d'),
+                'month'    => $this->locale->month_genitive[ date('m') ],
+                'year'     => date('Y'),
+            ),
+        );
+        //pre( $invoice_info );
+        //pre( $this->store_info );
+        //pre( $order->address_print );
+        //pre($this->locale);
+        
+        $product_title = $this->invoice_group_name;
+        $quantity_total = 0;
+        $items = $order->get_items();
+        foreach( $items as $id => $product ){
+            $product_data = $product->get_data();
+            $quantity_total += $product_data['quantity'];
+        }
+        
         ob_start();
         ?>
-        <div class="invoice">
+        <div class="invoice-page">
             <h1>
                 <img src="<?php echo $this->images['correios']; ?>" alt="" class="correios-logo" />
                 Declaração de Conteúdo
@@ -645,33 +695,33 @@ class Excs_Print_Orders {
             <!-- remetente -->
             <table class="invoice-sender" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td colspan="2">REMETENTE:</td>
+                    <td colspan="2"><strong>REMETENTE:</strong> <?php echo $this->store_info['blogname']; ?></td>
                 </tr>
                 <tr>
-                    <td colspan="2">CPF/CNPJ:</td>
+                    <td colspan="2"><strong>CPF/CNPJ:</strong> <?php echo $this->store_info['woocommerce_store_cpf_cnpj']; ?></td>
                 </tr>
                 <tr>
-                    <td colspan="2">ENDEREÇO:</td>
+                    <td colspan="2"><strong>ENDEREÇO:</strong> <?php echo "{$this->store_info['woocommerce_store_address']}, {$this->store_info['woocommerce_store_address_2']}"; ?></td>
                 </tr>
                 <tr>
-                    <td>CIDADE/UF:</td>
-                    <td>CEP:</td>
+                    <td><strong>CIDADE/UF:</strong> <?php echo "{$this->store_info['woocommerce_store_city']} / {$this->store_info['state']}"; ?></td>
+                    <td width="200"><strong>CEP:</strong> <?php echo $this->store_info['woocommerce_store_postcode']; ?></td>
                 </tr>
             </table>
             <!-- destinatário -->
             <table class="invoice-client" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td colspan="2">DESTINATÁRIO:</td>
+                    <td colspan="2"><strong>DESTINATÁRIO:</strong> <?php echo $order->address_print['nome']; ?></td>
                 </tr>
                 <tr>
-                    <td colspan="2">CPF/CNPJ:</td>
+                    <td colspan="2"><strong>CPF/CNPJ:</strong> <?php echo $order->get_meta('_billing_cpf'); ?></td>
                 </tr>
                 <tr>
-                    <td colspan="2">ENDEREÇO:</td>
+                    <td colspan="2"><strong>ENDEREÇO:</strong> <?php echo "{$order->address_print['logradouro']}{$order->address_print['complemento']}, {$order->address_print['bairro']}"; ?></td>
                 </tr>
                 <tr>
-                    <td>CIDADE/UF:</td>
-                    <td>CEP:</td>
+                    <td><strong>CIDADE/UF:</strong> <?php echo "{$order->address_print['cidade']} / {$order->address_print['uf']}"; ?></td>
+                    <td width="200"><strong>CEP:</strong> <?php echo $order->address_print['cep']; ?></td>
                 </tr>
             </table>
             <!-- lista de itens -->
@@ -684,7 +734,12 @@ class Excs_Print_Orders {
                     <td class="label">QUANTIDADE</td>
                     <td class="label">PESO</td>
                 </tr>
-                <?php for($i = 0; $i <= 12; $i++){ ?>
+                <tr>
+                    <td><?php echo $product_title; ?></td>
+                    <td><?php echo $quantity_total; ?></td>
+                    <td>&nbsp;</td>
+                </tr>
+                <?php for($i = 0; $i <= 5; $i++){ ?>
                 <tr>
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>
@@ -692,7 +747,7 @@ class Excs_Print_Orders {
                 </tr>
                 <?php } ?>
                 <tr>
-                    <td colspan="2" class="label">VALOR TOTAL</td>
+                    <td colspan="2" class="label">VALOR TOTAL <?php echo $order->get_formatted_order_total(); ?></td>
                     <td>&nbsp;</td>
                 </tr>
             </table>
@@ -712,10 +767,10 @@ class Excs_Print_Orders {
                         
                         <table class="signature-date">
                             <tr>
-                                <td>__________________,</td>
-                                <td>______ de</td>
-                                <td>______________ de</td>
-                                <td>______</td>
+                                <td><span class="underline"><?php echo $this->store_info['woocommerce_store_city']; ?></span>,</td>
+                                <td><span class="underline"><?php echo $invoice_info['signature']['day']; ?></span> de</td>
+                                <td><span class="underline"><?php echo $invoice_info['signature']['month']; ?></span> de</td>
+                                <td><span class="underline"><?php echo $invoice_info['signature']['year']; ?></span></td>
                                 <td>&nbsp;&nbsp;&nbsp;&nbsp;_______________________________</td>
                             </tr>
                             <tr>
@@ -822,7 +877,7 @@ class Excs_Print_Orders {
         }
         
         .invoice {
-            
+            padding: 10mm;
         }
         
         .invoice .correios-logo {
@@ -830,6 +885,7 @@ class Excs_Print_Orders {
         }
         
         .invoice h1 {
+            font-size: 20pt;
             margin: 0;
         }
         
@@ -877,6 +933,15 @@ class Excs_Print_Orders {
             border: none;
             padding: 1mm;
             text-align: center;
+        }
+        
+        .invoice table.signature-date .underline {
+            text-decoration: underline;
+        }
+        
+        .invoice table.signature-date .underline:after {
+            content: '....';
+            color: transparent;
         }
         
         .invoice table.invoice-obs ol {
