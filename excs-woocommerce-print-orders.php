@@ -401,8 +401,8 @@ class Excs_Print_Orders {
             
             <div class="no-print">
             <?php 
-            pre( $this->config, 'excs_print_orders_config', false );
-            pre( $this, 'Excs_Print_Orders', false );
+            pre( $this->config, 'DEBUG: excs_print_orders_config (abrir)', false );
+            pre( $this, 'DEBUG: Excs_Print_Orders (abrir)', false );
             ?>
             </div>
             
