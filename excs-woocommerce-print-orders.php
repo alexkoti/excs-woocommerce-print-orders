@@ -444,7 +444,7 @@ class Excs_Print_Orders {
                 }
                 $total++;
                 
-                if( $total % $this->per_page == 0 && $total != count($this->order_ids) ){
+                if( $total % $this->per_page == 0 && $total != (count($this->order_ids) + $this->offset) ){
                     echo "</div><div class='paper paper-{$this->paper['name']}'>";
                 }
             }
