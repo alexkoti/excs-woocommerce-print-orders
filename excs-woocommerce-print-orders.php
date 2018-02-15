@@ -60,16 +60,14 @@ class Excs_Print_Orders {
     private static $action = 'excs_print_orders';
     
     /**
-     * Definir se é para imprimir apenas o remetente loja
+     * Qual elemento será impresso:
+     * - 'recipient'    endereço destinatário
+     * - 'sender'       endereço remetente
+     * - 'invoice'      invoice(declaração correios)
      * 
      */
+    protected $print_action = 'sender';
     protected $print_sender = 0;
-    
-    /**
-     * Permitir a opção de imprimir o remetente
-     * 
-     */
-    protected $allow_print_sender = false;
     
     /**
      * Informações da loja/remetente
@@ -238,7 +236,7 @@ class Excs_Print_Orders {
     protected $config = array(
         'paper'              => 'A4',  // tipo de papel
         'per_page'           => 10,
-        'allow_print_sender' => false,
+        'print_action'       => '',
         'layout' => array(
             'group' => 'percentage',
             'item' => '2x2',
@@ -266,24 +264,39 @@ class Excs_Print_Orders {
         ),
     );
     
+    /**
+     * Valores permitidos de formulários
+     * 
+     */
+    protected $form_vars = array(
+        'print_action' => array(
+            'type' => 'in_array',
+            'args' => array(
+                'recipient',
+                'sender',
+                'invoice',
+            ),
+        ),
+        'offset' => array(
+            'type' => 'natural_number',
+        ),
+    );
+    
     protected $orders = array();
     
     function __construct(){
         global $wp_locale;
         $this->locale = $wp_locale;
         
-        if( isset($_GET['ids']) ){
-            $this->order_ids = explode(',', $_GET['ids']);
-        }
+        // definir os pedidos
+        $this->set_orders();
         
         $custom_config = apply_filters( 'excs_print_orders_config', $this->config );
         $this->config = array_replace_recursive( $this->config, $custom_config );
         
-        // definir se é impressão de remetente
-        $this->allow_print_sender = $this->config['allow_print_sender'];
-        if( isset($_GET['print_sender']) && $this->allow_print_sender == true ){
-            $this->print_sender = boolval( $_GET['print_sender'] );
-        }
+        // definir print action
+        $this->print_action = $this->config['print_action'];
+        $this->set_form_var('print_action', $this->print_action);
         
         // adicionar layouts extras
         $this->set_layouts();
@@ -314,7 +327,8 @@ class Excs_Print_Orders {
         );
         
         // definir offset
-        $this->offset = isset($_GET['offset']) ? $_GET['offset'] : 0;
+        //$this->offset = isset($_GET['offset']) ? $_GET['offset'] : 0;
+        $this->set_form_var('offset', 0);
         if( $this->offset > ($this->per_page - 1) ){
             $this->offset = ($this->per_page - 1);
         }
@@ -361,25 +375,13 @@ class Excs_Print_Orders {
             <form action="<?php echo admin_url( 'admin-ajax.php' ); ?>" method="get" class="no-print">
                 <input type="hidden" name="action" value="<?php echo self::$action; ?>" />
                 <input type="hidden" name="ids" value="<?php echo implode(',', $this->order_ids); ?>" />
-                <?php if( $this->print_sender == 0 ){ ?>
+                
+                <?php $this->print_action_bar(); ?>
+                
                 <fieldset>
-                    <legend>Imprimir endereços dos pedidos</legend>
-                    Definir início da impressão: 
-                    <input type="number" name="offset" value="<?php echo $this->offset; ?>" size="2" min="0" max="<?php echo (int)$this->per_page - 1; ?>" /> 
-                    <button type="submit" name="print_sender" value="0">Atualizar</button>
+                    <legend>Offset:</legend>
+                    <p>Pular <input type="number" name="offset" value="<?php echo $this->offset; ?>" size="2" min="0" max="<?php echo (int)$this->per_page - 1; ?>" /> itens no começo da impressão.</p>
                 </fieldset>
-                <?php if( $this->allow_print_sender == true ){ ?>
-                <fieldset>
-                    <legend>Trocar para imprimir apenas remetente</legend>
-                    <button type="submit" name="print_sender" value="1">Imprimir remetente</button>
-                </fieldset>
-                <?php } ?>
-                <?php } else { ?>
-                <fieldset>
-                    <legend>Trocar para imprimir endereços dos pedidos</legend>
-                    <button type="submit" name="print_sender" value="0">Imprimir destinatários</button>
-                </fieldset>
-                <?php } ?>
             </form>
             
             <p class="no-print"><a href="javascript: window.print();" class="btn btn-print">IMPRIMIR</a></p>
@@ -387,22 +389,29 @@ class Excs_Print_Orders {
             <h2 class="no-print" id="preview-title">Preview:</h2>
             
             <?php
-            if( $this->print_sender == 0 ){
-                $this->print_pages();
-            }
-            else{
-                $this->print_sender();
-            }
-            
-            if( $this->print_invoice == 1 ){
-                $this->print_invoices();
+            switch( $this->print_action ){
+                case 'recipient':
+                    $this->print_pages();
+                    break;
+                    
+                case 'sender':
+                    $this->print_sender();
+                    break;
+                    
+                case 'invoice':
+                    $this->print_invoices();
+                    break;
+                    
+                default:
+                    echo '<h2>Escolha o tipo de impressão</h2>';
+                    break;
             }
             ?>
             
             <div class="no-print">
             <?php 
             pre( $this->config, 'DEBUG: excs_print_orders_config (abrir)', false );
-            pre( $this, 'DEBUG: Excs_Print_Orders (abrir)', false );
+            pre( $this, 'DEBUG: Excs_Print_Orders (abrir)', true );
             ?>
             </div>
             
@@ -413,8 +422,92 @@ class Excs_Print_Orders {
         die();
     }
     
-    function print_pages(){
+    /**
+     * Definir variável de formulário
+     * Utilizar valor enviado via $_GET ou utilizar valor padrão
+     * Validar os dados conforme o tipo.
+     * 
+     */
+    protected function set_form_var( $name, $default = false ){
+        $value = isset($_GET[$name]) ? $_GET[$name] : $default;
+        $v = false;
         
+        if( isset($this->form_vars[$name]) ){
+            switch( $this->form_vars[$name]['type'] ){
+                case 'in_array':
+                    if( in_array( $value, $this->form_vars[$name]['args'] ) ){
+                        $this->$name = $value;
+                    }
+                    break;
+                
+                case 'natural_number':
+                    $int = filter_var($value, FILTER_VALIDATE_INT, array('options' => array('min_range' => 0)));
+                    $this->$name = ($int == false) ? 0 : $int;
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+        
+        return $v;
+    }
+    
+    /**
+     * Barra de controle para escolher o tipo de impressão:
+     * - 'recipient'    endereço destinatário
+     * - 'sender'       endereço remetente
+     * - 'invoice'      invoice(declaração correios)
+     * 
+     */
+    protected function print_action_bar(){
+        switch( $this->print_action ){
+            case 'recipient':
+                echo '<h2>Imprimindo destinatários</h2>';
+                break;
+                
+            case 'sender':
+                echo '<h2>Imprimindo remetente</h2>';
+                break;
+                
+            case 'invoice':
+                echo '<h2>Imprimindo declaração</h2>';
+                break;
+                
+            default:
+                echo '<h2>Escolher o tipo de impressão</h2>';
+                break;
+        }
+        ?>
+        <fieldset>
+            <legend>Escolha o tipo:</legend>
+            <button type="submit" name="print_action" value="recipient">Destinatários</button>
+            <button type="submit" name="print_action" value="sender">Remetente</button>
+            <button type="submit" name="print_action" value="invoice">Declaração</button>
+        </fieldset>
+        <?php
+    }
+    
+    protected function set_orders(){
+        if( isset($_GET['ids']) ){
+            $this->order_ids = explode(',', $_GET['ids']);
+        }
+        
+        foreach( $this->order_ids as $id ){
+            $order = new WC_Order( $id );
+            
+            // buscar informações de endereço
+            $address = $this->get_address( $order );
+            // guardar informações de endereço para serem usadas no invoice
+            $order->address_print = $address;
+            //pre($address);
+            
+            // guardar o pedido em orders
+            $this->orders[ $id ] = $order;
+        }
+    }
+    
+    protected function print_pages(){
         echo "<div class='paper paper-{$this->paper['name']}'>";
             $total = 0;
             $cel = 1;
@@ -432,9 +525,9 @@ class Excs_Print_Orders {
                 }
             }
             
-            foreach( $this->order_ids as $id ){
+            foreach( $this->orders as $order ){
                 echo "<div class='order layout-{$this->layout['name']}''>";
-                $this->print_order( $id );
+                $this->print_order( $order );
                 echo '</div>';
                 if( $cel == 2 ){
                     $cel = 1;
@@ -466,20 +559,9 @@ class Excs_Print_Orders {
         echo '</div>';
     }
     
-    function print_order( $id ){
+    protected function print_order( $order ){
         include_once( 'vendors/php-barcode-generator/src/BarcodeGenerator.php');
         include_once( 'vendors/php-barcode-generator/src/BarcodeGeneratorPNG.php');
-        
-        $order = new WC_Order( $id );
-        
-        // guardar o pedido em orders
-        $this->orders[ $id ] = $order;
-        
-        // buscar informações de endereço
-        $address = $this->get_address( $order );
-        // guardar informações de endereço para serem usadas no invoice
-        $order->address_print = $address;
-        //pre($address);
         
         $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
         $barcode = base64_encode($generator->getBarcode($address['cep'], $generator::TYPE_CODE_128, $this->barcode_config['width_factor'], $this->barcode_config['height']));
@@ -515,7 +597,7 @@ class Excs_Print_Orders {
         echo apply_filters( 'excs_print_orders_customer_label',  $output, $order, $address, $barcode, $alert );
     }
     
-    function get_address( $order ){
+    protected function get_address( $order ){
         
         $order_data = $order->get_data();
         $order_meta_data = $order->get_meta_data();
@@ -560,7 +642,7 @@ class Excs_Print_Orders {
      * Exibe um texto de alerta destacado para a visualização no navegador. A versão impressa não exibe o alerta.
      * 
      */
-    function validate_address( $address ){
+    protected function validate_address( $address ){
         $optional = array(
             'empresa',
             'complemento',
@@ -576,7 +658,7 @@ class Excs_Print_Orders {
         return $address;
     }
     
-    function get_address_meta_data( $meta_data, $key ){
+    protected function get_address_meta_data( $meta_data, $key ){
         foreach( $meta_data as $md ){
             $d = $md->get_data();
             if( $d['key'] == $key ){
@@ -585,7 +667,7 @@ class Excs_Print_Orders {
         }
     }
     
-    function print_sender(){
+    protected function print_sender(){
         $logo = '';
         
         $address = array();
@@ -639,7 +721,7 @@ class Excs_Print_Orders {
             $store_info[ $k ] = get_option( $k );
         }
         
-        $_country            = wc_get_base_location();
+        $_country = wc_get_base_location();
         $store_info['state'] = $_country['state'];
         
         $this->store_info = $store_info;
@@ -983,6 +1065,10 @@ class Excs_Print_Orders {
         fieldset {
             border: 1px solid #0085ba;
             margin: 0 0 30px;
+        }
+        
+        fieldset p {
+            margin: 0;
         }
         
         button, .btn {
