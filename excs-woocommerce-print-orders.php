@@ -403,7 +403,7 @@ class Excs_Print_Orders {
                     break;
                     
                 default:
-                    echo '<h2>Escolha o tipo de impressão</h2>';
+                    echo '<p>Escolha o tipo de impressão</p>';
                     break;
             }
             ?>
@@ -562,6 +562,8 @@ class Excs_Print_Orders {
     protected function print_order( $order ){
         include_once( 'vendors/php-barcode-generator/src/BarcodeGenerator.php');
         include_once( 'vendors/php-barcode-generator/src/BarcodeGeneratorPNG.php');
+        
+        $address = $order->address_print;
         
         $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
         $barcode = base64_encode($generator->getBarcode($address['cep'], $generator::TYPE_CODE_128, $this->barcode_config['width_factor'], $this->barcode_config['height']));
