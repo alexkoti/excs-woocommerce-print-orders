@@ -48,6 +48,12 @@ function excs_print_orders_ajax_init(){
 class Excs_Print_Orders {
     
     /**
+     * Exbir debug
+     * 
+     */
+    protected $debug = false;
+    
+    /**
      * Cópia do $wp_locale
      * 
      */
@@ -378,15 +384,18 @@ class Excs_Print_Orders {
                 
                 <?php $this->print_action_bar(); ?>
                 
+                <?php if( $this->print_action == 'recipient' ){ ?>
                 <fieldset>
                     <legend>Offset:</legend>
-                    <p>Pular <input type="number" name="offset" value="<?php echo $this->offset; ?>" size="2" min="0" max="<?php echo (int)$this->per_page - 1; ?>" /> itens no começo da impressão.</p>
+                    <p>Pular <input type="number" name="offset" value="<?php echo $this->offset; ?>" size="2" min="0" max="<?php echo (int)$this->per_page - 1; ?>" /> itens no começo da impressão. <button type="submit" name="print_action" value="recipient">atualizar</button></p>
                 </fieldset>
+                <?php } ?>
             </form>
             
+            <?php if( $this->print_action != '' ){ ?>
             <p class="no-print"><a href="javascript: window.print();" class="btn btn-print">IMPRIMIR</a></p>
-            
             <h2 class="no-print" id="preview-title">Preview:</h2>
+            <?php } ?>
             
             <?php
             switch( $this->print_action ){
@@ -408,12 +417,15 @@ class Excs_Print_Orders {
             }
             ?>
             
-            <div class="no-print">
+            
             <?php 
-            pre( $this->config, 'DEBUG: excs_print_orders_config (abrir)', false );
-            pre( $this, 'DEBUG: Excs_Print_Orders (abrir)', true );
+            if( $this->debug == true ){
+                echo '<div class="no-print" style="display:none;">';
+                pre( $this->config, 'DEBUG: excs_print_orders_config (abrir)', false );
+                pre( $this, 'DEBUG: Excs_Print_Orders (abrir)', false );
+                echo '</div>';
+            }
             ?>
-            </div>
             
         </body>
         </html>
