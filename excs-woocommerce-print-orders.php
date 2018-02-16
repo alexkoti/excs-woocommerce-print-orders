@@ -145,7 +145,7 @@ class Excs_Print_Orders {
                 '6183' => array(
                     'name'         => '6183 (10 etiquetas)',
                     'paper'        => 'Letter',
-                    'page_margins' => '10mm 0 0 3.5mm',
+                    'page_margins' => '12mm 0 0 3.5mm',
                     'per_page'     => 10,
                     'width'        => '101.6mm',
                     'height'       => '50.8mm',
@@ -1134,10 +1134,11 @@ class Excs_Print_Orders {
             margin: 0;
         }
         @media print {
+            /* É vital que as medidas do body sejam iguais ao tamanho do papel, para não ocorrer redimensionamento no navegador */
             html, body {
-                height: auto;
+                height: <?php echo $this->paper['height']; ?>mm;
                 margin: 0;
-                width: <?php echo $this->paper['width']; ?>;
+                width: <?php echo $this->paper['width']; ?>mm;
             }
             
             .paper {
