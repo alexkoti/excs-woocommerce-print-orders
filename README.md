@@ -22,36 +22,36 @@ function custom_print_orders_config( $config ){
 Defaults de `$config`:
 ```php
 protected $config = array(
-        'debug'              => false,
-        'paper'              => 'A4',  // tipo de papel
-        'per_page'           => 10,
-        'print_action'       => '',
-        'layout' => array(
-            'group' => 'percentage',
-            'item' => '2x2',
-        ),
-        'images' => array(
-            'logo' => false,
-        ),
-        'admin' => array(
-            'title'               => 'Imprimir Etiquetas de endereços dos pedidos',
-            'individual_buttons'  => true,       // botões de impressão individuais para cada pedido
-            'layout_select'       => true,       // habilitar dropdown para seleção de layout, como modelos de etiquetas pimaco
-            'print_invoice'       => true,       // imprimir página de declaração de contepúdo dos correios
-            'invoice_group_items' => true,       // agrupar items na declaração
-            'invoice_group_name'  => '',         // nome para agrupamento na declaração
-        ),
-        'css' => array(
-            'base'    => '',
-            'preview' => '',
-            'print'   => '',
-            'file'    => '',
-        ),
-        'barcode_config' => array(
-            'width_factor' => 1,
-            'height'       => 50,
-        ),
-    );
+    'debug'              => false,
+    'paper'              => 'A4',  // tipo de papel
+    'per_page'           => 10,
+    'print_action'       => '',
+    'layout' => array(
+        'group' => 'percentage',
+        'item' => '2x2',
+    ),
+    'images' => array(
+        'logo' => false,
+    ),
+    'admin' => array(
+        'title'               => 'Imprimir Etiquetas de endereços dos pedidos',
+        'individual_buttons'  => true,       // botões de impressão individuais para cada pedido
+        'layout_select'       => true,       // habilitar dropdown para seleção de layout, como modelos de etiquetas pimaco
+        'print_invoice'       => true,       // imprimir página de declaração de contepúdo dos correios
+        'invoice_group_items' => true,       // agrupar items na declaração
+        'invoice_group_name'  => '',         // nome para agrupamento na declaração
+    ),
+    'css' => array(
+        'base'    => '',
+        'preview' => '',
+        'print'   => '',
+        'file'    => '',
+    ),
+    'barcode_config' => array(
+        'width_factor' => 1,
+        'height'       => 50,
+    ),
+);
 ```
 ### Adicionar layouts
 
