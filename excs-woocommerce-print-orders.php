@@ -62,6 +62,12 @@ class Excs_Print_Orders {
     protected $debug = false;
     
     /**
+     * URL do plugin
+     * 
+     */
+    private $plugin_url = '';
+    
+    /**
      * Cópia do $wp_locale
      * 
      */
@@ -301,6 +307,8 @@ class Excs_Print_Orders {
     function __construct(){
         global $wp_locale;
         $this->locale = $wp_locale;
+        
+        $this->plugin_url = plugin_dir_url( __FILE__ );
         
         // definir os pedidos
         $this->set_orders();
