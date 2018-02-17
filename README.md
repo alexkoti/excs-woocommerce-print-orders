@@ -3,6 +3,20 @@
 
 Plugin para impressão de etiquetas de destinatários, remetentes e declaração dos correios a partir de pedidos do WooCommerce.
 
+No momento só é possível editar as configurações via hooks, mas tenho planos de adicionar controles para o usuário configurar manualmente. Atualmente só existe o campo de offset.
+
+Enviem feedback, report de bugs e sugestões via [issues do github](https://github.com/alexkoti/excs-woocommerce-print-orders/issues) 
+
+Ajuda: preciso de ajuda para adicionar os outros modelos de etiquetas da pimaco. Além das medidas é preciso fazer testes com as folhas impressas, para certificar que o encaixe está correto. Então quem trabalhar com os outros modelos por favor envie as configurações de layout usadas.
+
+## ToDo
+- [ ] verificar nível de usuário
+- [ ] admin page para configurar opções
+- [ ] admin page para adicionar layouts e modelos de papel
+- [ ] validador de CSS
+- [ ] adicionar opção de google-fonts
+- [ ] strings padrão para inglês e aplicar tradução via .mo
+
 ## Hooks
 
 ### Editar configurações
@@ -11,7 +25,7 @@ Utilizar o hook `excs_print_orders_config`:
 ```php
 add_filter( 'excs_print_orders_config', 'custom_print_orders_config' );
 function custom_print_orders_config( $config ){
-	// adicionar arquivo CSS
+    // adicionar arquivo CSS
     $config['css'] = array(
         'file' => ABS_PATH .  '/css/print-orders.css',
     );
@@ -123,7 +137,7 @@ Para escolher um layout dentre os layouts disponíveis, é preciso definir o gru
 ```php
 add_filter( 'excs_print_orders_config', 'custom_print_orders_config' );
 function custom_print_orders_config( $config ){
-	// definir o grupo e item de layout
+    // definir o grupo e item de layout
     $config['layout'] = array(
         'group' => 'pimaco',
         'item'  => '6183',
