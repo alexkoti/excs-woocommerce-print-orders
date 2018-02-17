@@ -254,6 +254,7 @@ class Excs_Print_Orders {
      * 
      */
     protected $config = array(
+        'debug'              => false,
         'paper'              => 'A4',  // tipo de papel
         'per_page'           => 10,
         'print_action'       => '',
@@ -315,6 +316,9 @@ class Excs_Print_Orders {
         
         $custom_config = apply_filters( 'excs_print_orders_config', $this->config );
         $this->config = array_replace_recursive( $this->config, $custom_config );
+        
+        // definir status do debug
+        $this->debug = $this->config['debug'];
         
         // definir print action
         $this->print_action = $this->config['print_action'];
@@ -436,7 +440,7 @@ class Excs_Print_Orders {
             
             <?php 
             if( $this->debug == true ){
-                echo '<div class="no-print" style="display:none;">';
+                echo '<div class="no-print">';
                 pre( $this->config, 'DEBUG: excs_print_orders_config (abrir)', false );
                 pre( $this, 'DEBUG: Excs_Print_Orders (abrir)', false );
                 echo '</div>';
