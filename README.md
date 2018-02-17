@@ -131,3 +131,55 @@ function custom_print_orders_config( $config ){
     return $config;
 }
 ```
+
+### Layouts default
+```php
+protected $layouts = array(
+    'percentage' => array(
+        'name' => 'Simples',
+        'items' => array(
+            '2x2' => array(
+                'name'         => '2x2',
+                'paper'        => 'A4',
+                'per_page'     => 4,
+                'page_margins' => '10mm 10mm 10mm 10mm',
+                'width'        => '50%',
+                'height'       => '50%',
+                'item_margin'  => '0 0 0 0',
+            ),
+        ),
+    ),
+    'pimaco' => array(
+        'name' => 'Pimaco',
+        'items' => array(
+            '6183' => array(
+                'name'         => '6183 (10 etiquetas)',
+                'paper'        => 'Letter',
+                'page_margins' => '12mm 0 0 3.5mm',
+                'per_page'     => 10,
+                'width'        => '101.6mm',
+                'height'       => '50.8mm',
+                'item_margin'  => '0 5.0mm 0 0',
+            ),
+            '6082' => array(
+                'name'         => '6082 (14 etiquetas)',
+                'paper'        => 'Letter',
+                'page_margins' => '19mm 0 0 6mm',
+                'per_page'     => 14,
+                'width'        => '101.6mm',
+                'height'       => '33.9mm',
+                'item_margin'  => '0',
+            ),
+            '8099F' => array(
+                'name'         => '8099F (10 etiquetas)',
+                'paper'        => 'Letter',
+                'page_margins' => '19mm 19mm 0 19mm',
+                'per_page'     => 10,
+                'width'        => '77.79mm',
+                'height'       => '46.56mm',
+                'item_margin'  => '0 83px 0 0',
+            ),
+        ),
+    ),
+);
+```
