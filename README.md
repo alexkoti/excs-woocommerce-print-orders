@@ -1,4 +1,5 @@
 
+
 # Excs WooCommerce Print Orders
 
 Plugin para impressão de etiquetas de destinatários, remetentes e declaração dos correios a partir de pedidos do WooCommerce.
@@ -196,4 +197,35 @@ protected $layouts = array(
         ),
     ),
 );
+```
+
+----------
+
+## Dados adicionais
+
+Este plugin está usando um campo extra para pegar informações da loja. Em `wp-admin/admin.php?page=wc-settings` temos os dados de endereço da loja. É possível adicionar um campo de texto para o CPF/CNPJ da loja, para poder preencher a declaração dos correios.
+
+O exemplo abaixo adiciona o campo `woocommerce_store_cpf_cnpj` após o campo de CEP:
+```php
+
+add_filter( 'woocommerce_general_settings', 'asbaratas_woocommerce_general_settings' );
+function asbaratas_woocommerce_general_settings( $settings ){
+    
+    $return = array();
+    foreach( $settings as $i => $s ){
+        $return[] = $s;
+        if( $s['id'] == 'woocommerce_store_postcode' ){
+            $return[] = array(
+                'title'    => 'CPF/CNPJ',
+                'desc'     => 'CPF da pessoa física responsável ou CNPJ da loja.',
+                'id'       => 'woocommerce_store_cpf_cnpj',
+                'default'  => '',
+                'type'     => 'text',
+                'desc_tip' => true,
+            );
+        }
+    }
+    
+    return $return;
+}
 ```
