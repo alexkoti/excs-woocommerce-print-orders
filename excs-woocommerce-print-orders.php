@@ -437,7 +437,7 @@ class Excs_Print_Orders {
             ?>
             
             
-            <?php 
+            <?php
             if( $this->debug == true ){
                 echo '<div class="no-print">';
                 pre( $this->config, 'DEBUG: excs_print_orders_config (abrir)', false );
@@ -512,9 +512,9 @@ class Excs_Print_Orders {
         ?>
         <fieldset>
             <legend>Escolha o tipo:</legend>
-            <button type="submit" name="print_action" value="recipient">Destinatários</button>
-            <button type="submit" name="print_action" value="sender">Remetente</button>
-            <button type="submit" name="print_action" value="invoice">Declaração</button>
+            <button type="submit" name="print_action" value="recipient" id="print-btn-recipient">Destinatários</button>
+            <button type="submit" name="print_action" value="sender" id="print-btn-sender">Remetente</button>
+            <button type="submit" name="print_action" value="invoice" id="print-btn-invoice">Declaração</button>
         </fieldset>
         <?php
     }
@@ -1189,8 +1189,8 @@ class Excs_Print_Orders {
             }
             
             .order {
-                outline: none;
                 outline: 1px dotted #ccc;
+                outline: none;
             }
             
             .empty span {
