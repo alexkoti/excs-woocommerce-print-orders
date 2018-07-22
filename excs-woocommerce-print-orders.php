@@ -520,6 +520,7 @@ class Excs_Print_Orders {
     }
     
     protected function set_orders(){
+
         if( isset($_GET['ids']) ){
             $this->order_ids = explode(',', $_GET['ids']);
         }
@@ -927,6 +928,146 @@ class Excs_Print_Orders {
     }
     
     /**
+     * Definir layouts disponíveis e adicionais custom
+     * 
+     */
+    protected function set_layouts(){
+        // layouts filtrado com customs
+        $layouts = apply_filters( 'excs_print_orders_layouts', $this->layouts );
+        
+        if( is_array($layouts) and !empty($layouts) ){
+            // resetar layouts
+            $this->layouts = array();
+            
+            // readicionar layouts
+            foreach( $layouts as $slug => $layout ){
+                // apenas com nome de grupo e itens definidos
+                if( isset($layout['name']) && isset($layout['items']) and !empty($layout['items']) ){
+                    $this->add_layout_group( $slug, $layout['name'] );
+                    foreach( $layout['items'] as $ls => $args ){
+                        $args = wp_parse_args( $args, $this->layout_default );
+                        $this->add_layout_item( $slug, $ls, $args );
+                    }
+                }
+            } 
+        }
+    }
+    
+    /**
+     * Adicionar grupo de layout
+     * 
+     */
+    protected function add_layout_group( $slug, $name ){
+        if( !isset( $this->layouts[$slug] ) ){
+            $this->layouts[$slug] = array(
+                'name' => $name,
+                'items' => array(),
+            );
+        }
+    }
+    
+    /**
+     * Adicionar layout dentro de grupo
+     * 
+     */
+    protected function add_layout_item( $group, $slug, $args ){
+        if( isset( $this->layouts[$group] ) && !isset( $this->layouts[$group]['items'][$slug] ) ){
+            $this->layouts[$group]['items'][$slug] = array(
+                'name'         => $args['name'],
+                'paper'        => $args['paper'],
+                'page_margins' => $args['page_margins'],
+                'per_page'     => $args['per_page'],
+                'width'        => $args['width'],
+                'height'       => $args['height'],
+                'item_margin'  => $args['item_margin'],
+            );
+        }
+    }
+    
+    public static function footer(){
+        global $typenow;
+        if( $typenow != 'shop_order' ){
+            return;
+        }
+        
+        $url = add_query_arg(array('action' => self::$action), admin_url('admin-ajax.php'));
+        ?>
+        <script type="text/javascript">
+            jQuery(document).ready(function($){
+                // add/update querystring
+                // @link http://stackoverflow.com/a/6021027
+                function updateQueryStringParameter(uri, key, value) {
+                    var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+                    var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+                    if (uri.match(re)) {
+                        return uri.replace(re, '$1' + key + "=" + value + '$2');
+                    }
+                    else {
+                        return uri + separator + key + "=" + value;
+                    }
+                }
+                
+                $('input:checkbox[name="post[]"], #cb-select-all-1').on('change', function(){
+                    var ids_arr = [];
+                    $('input:checkbox[name="post[]"]:checked').each(function() {
+                        ids_arr.push(this.value);
+                    });
+                    var url = updateQueryStringParameter( $('#excs-print-orders-button').attr('href'), 'ids', ids_arr.join(',') );
+                    $('#excs-print-orders-button').attr('href', url);
+                });
+                $('<a href="<?php echo $url; ?>" class="button" target="_blank" id="excs-print-orders-button">Imprimir Pedidos Selecionados</a>').insertAfter('#post-query-submit');
+                
+                // botão individual
+                if( $('.column-order_number .excs-order-items').length ){
+                    $('.column-order_number .excs-order-items').each(function( index ){
+                        var id = $(this).closest('tr').attr('id').replace('post-', '');
+                        $('<a href="<?php echo $url; ?>&ids=' + id + '" class="button print-barcode" target="_blank" title="imprimir etiqueta individual">Etiqueta </a>').insertAfter( $(this) );
+                    });
+                }
+                else{
+                    $('mark.tips').each(function( index ){
+                        var id = $(this).closest('tr').attr('id').replace('post-', '');
+                        $('<a href="<?php echo $url; ?>&ids=' + id + '" class="button print-barcode" target="_blank" title="imprimir etiqueta individual"></a>').insertAfter( $(this) );
+                    });
+                }
+            });
+        </script>
+        <style type="text/css">
+            /**
+             * Botão de imprimir selecionados
+             * 
+             */
+            #excs-print-orders-button {
+                display: inline-block;
+                margin: 1px 8px 0 0;
+            }
+            
+            /**
+             * Botão de imprimir pedido individual
+             * 
+             */
+            .wp-core-ui .print-barcode {
+                margin: 10px 0 0;
+                padding: 1px 7px 0;
+            }
+            .wp-core-ui .print-barcode:after {
+                font-family: WooCommerce;
+                content: '\e006';
+            }
+            @media only screen and (max-width: 782px) {
+                .wp-core-ui .print-barcode {
+                    float: left;
+                    margin: 0 0 0 10px;
+                }
+                .post-type-shop_order .wp-list-table .column-order_status mark {
+                    float: left;
+                }
+            }
+        </style>
+        <?php
+    }
+    
+    /**
      * CSS comum usado tanto para o preview quanto para impressão
      * 
      */
@@ -1157,6 +1298,7 @@ class Excs_Print_Orders {
      * 
      */
     protected function css_print(){
+
         ?>
         <style type="text/css" id="css-print">
         /* CSS print only */
@@ -1208,146 +1350,6 @@ class Excs_Print_Orders {
         
         <?php echo $this->config['css']['print']; ?>
         
-        </style>
-        <?php
-    }
-    
-    /**
-     * Definir layouts disponíveis e adicionais custom
-     * 
-     */
-    protected function set_layouts(){
-        // layouts filtrado com customs
-        $layouts = apply_filters( 'excs_print_orders_layouts', $this->layouts );
-        
-        if( is_array($layouts) and !empty($layouts) ){
-            // resetar layouts
-            $this->layouts = array();
-            
-            // readicionar layouts
-            foreach( $layouts as $slug => $layout ){
-                // apenas com nome de grupo e itens definidos
-                if( isset($layout['name']) && isset($layout['items']) and !empty($layout['items']) ){
-                    $this->add_layout_group( $slug, $layout['name'] );
-                    foreach( $layout['items'] as $ls => $args ){
-                        $args = wp_parse_args( $args, $this->layout_default );
-                        $this->add_layout_item( $slug, $ls, $args );
-                    }
-                }
-            } 
-        }
-    }
-    
-    /**
-     * Adicionar grupo de layout
-     * 
-     */
-    protected function add_layout_group( $slug, $name ){
-        if( !isset( $this->layouts[$slug] ) ){
-            $this->layouts[$slug] = array(
-                'name' => $name,
-                'items' => array(),
-            );
-        }
-    }
-    
-    /**
-     * Adicionar layout dentro de grupo
-     * 
-     */
-    protected function add_layout_item( $group, $slug, $args ){
-        if( isset( $this->layouts[$group] ) && !isset( $this->layouts[$group]['items'][$slug] ) ){
-            $this->layouts[$group]['items'][$slug] = array(
-                'name'         => $args['name'],
-                'paper'        => $args['paper'],
-                'page_margins' => $args['page_margins'],
-                'per_page'     => $args['per_page'],
-                'width'        => $args['width'],
-                'height'       => $args['height'],
-                'item_margin'  => $args['item_margin'],
-            );
-        }
-    }
-    
-    public static function footer(){
-        global $typenow;
-        if( $typenow != 'shop_order' ){
-            return;
-        }
-        
-        $url = add_query_arg(array('action' => self::$action), admin_url('admin-ajax.php'));
-        ?>
-        <script type="text/javascript">
-            jQuery(document).ready(function($){
-                // add/update querystring
-                // @link http://stackoverflow.com/a/6021027
-                function updateQueryStringParameter(uri, key, value) {
-                    var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
-                    var separator = uri.indexOf('?') !== -1 ? "&" : "?";
-                    if (uri.match(re)) {
-                        return uri.replace(re, '$1' + key + "=" + value + '$2');
-                    }
-                    else {
-                        return uri + separator + key + "=" + value;
-                    }
-                }
-                
-                $('input:checkbox[name="post[]"], #cb-select-all-1').on('change', function(){
-                    var ids_arr = [];
-                    $('input:checkbox[name="post[]"]:checked').each(function() {
-                        ids_arr.push(this.value);
-                    });
-                    var url = updateQueryStringParameter( $('#excs-print-orders-button').attr('href'), 'ids', ids_arr.join(',') );
-                    $('#excs-print-orders-button').attr('href', url);
-                });
-                $('<a href="<?php echo $url; ?>" class="button" target="_blank" id="excs-print-orders-button">Imprimir Pedidos Selecionados</a>').insertAfter('#post-query-submit');
-                
-                // botão individual
-                if( $('.column-order_number .excs-order-items').length ){
-                    $('.column-order_number .excs-order-items').each(function( index ){
-                        var id = $(this).closest('tr').attr('id').replace('post-', '');
-                        $('<a href="<?php echo $url; ?>&ids=' + id + '" class="button print-barcode" target="_blank" title="imprimir etiqueta individual">Etiqueta </a>').insertAfter( $(this) );
-                    });
-                }
-                else{
-                    $('mark.tips').each(function( index ){
-                        var id = $(this).closest('tr').attr('id').replace('post-', '');
-                        $('<a href="<?php echo $url; ?>&ids=' + id + '" class="button print-barcode" target="_blank" title="imprimir etiqueta individual"></a>').insertAfter( $(this) );
-                    });
-                }
-            });
-        </script>
-        <style type="text/css">
-            /**
-             * Botão de imprimir selecionados
-             * 
-             */
-            #excs-print-orders-button {
-                display: inline-block;
-                margin: 1px 8px 0 0;
-            }
-            
-            /**
-             * Botão de imprimir pedido individual
-             * 
-             */
-            .wp-core-ui .print-barcode {
-                margin: 10px 0 0;
-                padding: 1px 7px 0;
-            }
-            .wp-core-ui .print-barcode:after {
-                font-family: WooCommerce;
-                content: '\e006';
-            }
-            @media only screen and (max-width: 782px) {
-                .wp-core-ui .print-barcode {
-                    float: left;
-                    margin: 0 0 0 10px;
-                }
-                .post-type-shop_order .wp-list-table .column-order_status mark {
-                    float: left;
-                }
-            }
         </style>
         <?php
     }
