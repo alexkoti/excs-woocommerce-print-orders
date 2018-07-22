@@ -639,7 +639,7 @@ class Excs_Print_Orders {
             </div>
             {$alert}
         </div>";
-        echo apply_filters( 'excs_print_orders_customer_label',  $output, $order, $address, $barcode, $alert );
+        echo apply_filters( 'excs_print_orders_customer_label', $output, $order, $address, $barcode, $alert );
     }
     
     protected function get_address( $order ){
