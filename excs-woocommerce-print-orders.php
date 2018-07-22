@@ -244,7 +244,7 @@ class Excs_Print_Orders {
     
     protected $print_invoice = true;
     
-    protected $invoice_group_items = true;
+    protected $invoice_group_items = false;
     
     protected $invoice_group_name = '';
     
@@ -269,7 +269,7 @@ class Excs_Print_Orders {
             'individual_buttons'  => true,       // botões de impressão individuais para cada pedido
             'layout_select'       => true,       // habilitar dropdown para seleção de layout, como modelos de etiquetas pimaco
             'print_invoice'       => true,       // imprimir página de declaração de contepúdo dos correios
-            'invoice_group_items' => true,       // agrupar items na declaração
+            'invoice_group_items' => false,      // agrupar items na declaração
             'invoice_group_name'  => '',         // nome para agrupamento na declaração
         ),
         'css' => array(
@@ -790,18 +790,34 @@ class Excs_Print_Orders {
                 'year'     => date('Y'),
             ),
         );
-        //pre( $invoice_info );
-        //pre( $this->store_info );
-        //pre( $order->address_print );
+        //pre($order, 'order', false);
+        //pre($order->get_total(), 'get_total', true);
+        //pre($invoice_info);
+        //pre($this->store_info);
+        //pre($order->address_print);
         //pre($this->locale);
         
-        $product_title = $this->invoice_group_name;
+        $group_title    = $this->invoice_group_name;
         $quantity_total = 0;
-        $items = $order->get_items();
+        $subtotal       = 0;
+        $items          = $order->get_items();
+        $order_items    = array();
         foreach( $items as $id => $product ){
-            $product_data = $product->get_data();
+            $p              = $product->get_product();
+            $weight         = (float) $p->get_weight() * $product_data['quantity'];
+            $product_data   = $product->get_data();
             $quantity_total += $product_data['quantity'];
+            $subtotal       += (double) $product->get_subtotal();
+            $order_items[] = array(
+                'name'     => $product_data['name'],
+                'quantity' => $product_data['quantity'],
+                'price'    => $product->get_subtotal(),
+                'weight'   => $weight,
+            );
         }
+        $order_items = apply_filters( 'excs_print_orders_invoice_order_items', $order_items );
+        //pre($subtotal, 'subtotal');
+        //pre($order_items, 'order_items');
         
         ob_start();
         ?>
@@ -852,20 +868,32 @@ class Excs_Print_Orders {
                     <td class="label">QUANTIDADE</td>
                     <td class="label">PESO</td>
                 </tr>
-                <tr>
-                    <td><?php echo $product_title; ?></td>
-                    <td><?php echo $quantity_total; ?></td>
-                    <td>&nbsp;</td>
-                </tr>
-                <?php for($i = 0; $i <= 5; $i++){ ?>
-                <tr>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                    <td>&nbsp;</td>
-                </tr>
+
+                <?php if( $this->invoice_group_items == true ){ ?>
+                    <tr>
+                        <td><?php echo $group_title; ?></td>
+                        <td><?php echo $quantity_total; ?></td>
+                        <td>&nbsp;</td>
+                    </tr>
+                    <?php for($i = 0; $i <= 5; $i++){ ?>
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                        <td>&nbsp;</td>
+                    </tr>
+                    <?php } ?>
+                <?php } else { ?>
+                <?php foreach( $order_items as $item ){ ?>
+                    <tr>
+                        <td><?php echo $item['name']; ?></td>
+                        <td><?php echo $item['quantity']; ?></td>
+                        <td><?php echo wc_format_weight($item['weight']); ?></td>
+                    </tr>
                 <?php } ?>
+                <?php } ?>
+
                 <tr>
-                    <td colspan="2" class="label">VALOR TOTAL <?php echo $order->get_formatted_order_total(); ?></td>
+                    <td colspan="2" class="label">VALOR TOTAL <?php echo wc_price($subtotal); ?></td>
                     <td>&nbsp;</td>
                 </tr>
             </table>
@@ -1027,7 +1055,7 @@ class Excs_Print_Orders {
                     });
                 }
                 else{
-                    $('mark.tips').each(function( index ){
+                    $('.order-preview').each(function( index ){
                         var id = $(this).closest('tr').attr('id').replace('post-', '');
                         $('<a href="<?php echo $url; ?>&ids=' + id + '" class="button print-barcode" target="_blank" title="imprimir etiqueta individual"></a>').insertAfter( $(this) );
                     });
@@ -1049,8 +1077,12 @@ class Excs_Print_Orders {
              * 
              */
             .wp-core-ui .print-barcode {
-                margin: 10px 0 0;
+                margin: 10px 10px 0 0;
                 padding: 1px 7px 0;
+            }
+            .wp-core-ui .order-preview + .print-barcode {
+                margin: 0 10px 0 0;
+                float: left;
             }
             .wp-core-ui .print-barcode:after {
                 font-family: WooCommerce;
