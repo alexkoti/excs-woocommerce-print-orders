@@ -189,6 +189,15 @@ class Excs_Print_Orders {
                     'height'       => '46.56mm',
                     'item_margin'  => '0 83px 0 0',
                 ),
+                'A4356' => array(
+                    'name'         => 'A4356 (33 etiquetas)',
+                    'paper'        => 'A4',
+                    'page_margins' => '8.8mm 0mm 0mm 7.2mm',
+                    'per_page'     => 33,
+                    'width'        => '63.5mm',
+                    'height'       => '25.4mm',
+                    'item_margin'  => '0 0 0 0',
+                ),
             ),
         ),
     );
