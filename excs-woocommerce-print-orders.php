@@ -520,7 +520,7 @@ class Excs_Print_Orders {
     }
     
     protected function set_orders(){
-
+        
         if( isset($_GET['ids']) ){
             $this->order_ids = explode(',', $_GET['ids']);
         }
@@ -537,6 +537,8 @@ class Excs_Print_Orders {
             // guardar o pedido em orders
             $this->orders[ $id ] = $order;
         }
+
+        $this->orders = apply_filters( 'excs_print_orders', $this->orders );
     }
     
     protected function print_pages(){
