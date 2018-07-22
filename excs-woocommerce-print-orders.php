@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Excs WooCommerce Print Orders
  * Plugin URI:  http://github.com/alexkoti/excs-woocommerce-print-orders
- * Description: Allow multiple pickup locations shipping method.
+ * Description: Imprimir etiquetas para pedidos do WooCommerce
  * Author:      Alex Koti
  * Author       URI: http://alexkoti.com/
  * Version:     1.0.0
