@@ -679,6 +679,7 @@ class Excs_Print_Orders {
             );
         }
         $address = $this->validate_address( $address );
+        $address = apply_filters( 'excs_print_orders_customer_address', $address, $order );
         return $address;
     }
     
