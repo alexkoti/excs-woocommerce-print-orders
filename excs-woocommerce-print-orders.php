@@ -778,11 +778,12 @@ class Excs_Print_Orders {
      * 
      */
     protected function print_invoices(){
-        
+        echo apply_filters( 'excs_print_orders_single_invoice_output_start', '' );
         foreach( $this->orders as $id => $order ){
             $invoice = $this->set_invoice( $order );
-            echo "<div class='paper invoice'><div class='invoice-inner'>{$invoice}</div></div>";
+            echo apply_filters( 'excs_print_orders_single_invoice_output', "<div class='paper invoice'><div class='invoice-inner'>{$invoice}</div></div>", $invoice);
         }
+        echo apply_filters( 'excs_print_orders_single_invoice_output_end', '' );
     }
     
     /**
