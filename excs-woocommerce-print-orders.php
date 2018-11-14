@@ -835,7 +835,10 @@ class Excs_Print_Orders {
                 'weight'   => $weight,
             );
         }
-        $weight_total = round($weight_total);
+        // arredondar apenas para gramas
+        if( get_option('woocommerce_weight_unit') == 'g' ){
+            $weight_total = round($weight_total);
+        }
         $order_items = apply_filters( 'excs_print_orders_invoice_order_items', $order_items );
         //pre($subtotal, 'subtotal');
         //pre($order_items, 'order_items');
@@ -894,7 +897,7 @@ class Excs_Print_Orders {
                     <tr>
                         <td class="item-value group-title"><?php echo $group_title; ?></td>
                         <td class="item-value group-quantity"><?php echo $quantity_total; ?></td>
-                        <td class="item-value group-weight"><?php echo wc_format_weight($weight_total, 'g'); ?></td>
+                        <td class="item-value group-weight"><?php echo wc_format_weight($weight_total); ?></td>
                     </tr>
                     <?php for($i = 0; $i < $this->invoice_group_empty_rows; $i++){ ?>
                     <tr>
