@@ -842,85 +842,85 @@ class Excs_Print_Orders {
         ob_start();
         ?>
         <div class="invoice-page">
-            <h1>
+            <h1 class="invoice-logo">
                 <img src="<?php echo $this->plugin_url; ?>/assets/img/logo-correios.svg" alt="" class="correios-logo" />
                 Declaração de Conteúdo
             </h1>
             <!-- remetente -->
             <table class="invoice-sender" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td colspan="2"><strong>REMETENTE:</strong> <?php echo $this->store_info['blogname']; ?></td>
+                    <td colspan="2" class="sender"><strong class="label">REMETENTE:</strong> <span class="value"><?php echo $this->store_info['blogname']; ?></span></td>
                 </tr>
                 <tr>
-                    <td colspan="2"><strong>CPF/CNPJ:</strong> <?php echo $this->store_info['woocommerce_store_cpf_cnpj']; ?></td>
+                    <td colspan="2" class="document"><strong class="label">CPF/CNPJ:</strong> <span class="value"><?php echo $this->store_info['woocommerce_store_cpf_cnpj']; ?></span></td>
                 </tr>
                 <tr>
-                    <td colspan="2"><strong>ENDEREÇO:</strong> <?php echo "{$this->store_info['woocommerce_store_address']}, {$this->store_info['woocommerce_store_address_2']}"; ?></td>
+                    <td colspan="2" class="address"><strong class="label">ENDEREÇO:</strong> <span class="value"><?php echo "{$this->store_info['woocommerce_store_address']}, {$this->store_info['woocommerce_store_address_2']}"; ?></span></td>
                 </tr>
                 <tr>
-                    <td><strong>CIDADE/UF:</strong> <?php echo "{$this->store_info['woocommerce_store_city']} / {$this->store_info['state']}"; ?></td>
-                    <td width="200"><strong>CEP:</strong> <?php echo $this->store_info['woocommerce_store_postcode']; ?></td>
+                    <td class="city-state"><strong class="label">CIDADE/UF:</strong> <span class="value"><?php echo "{$this->store_info['woocommerce_store_city']} / {$this->store_info['state']}"; ?></span></td>
+                    <td width="200" class="zip-code"><strong class="label">CEP:</strong> <span class="value"><?php echo $this->store_info['woocommerce_store_postcode']; ?></span></td>
                 </tr>
             </table>
             <!-- destinatário -->
             <table class="invoice-client" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td colspan="2"><strong>DESTINATÁRIO:</strong> <?php echo $order->address_print['nome']; ?></td>
+                    <td colspan="2" class="receiver"><strong class="label">DESTINATÁRIO:</strong> <span class="value"><?php echo $order->address_print['nome']; ?></span></td>
                 </tr>
                 <tr>
-                    <td colspan="2"><strong>CPF/CNPJ:</strong> <?php echo $order->get_meta('_billing_cpf'); ?></td>
+                    <td colspan="2" class="document"><strong class="label">CPF/CNPJ:</strong> <span class="value"><?php echo $order->get_meta('_billing_cpf'); ?></span></td>
                 </tr>
                 <tr>
-                    <td colspan="2"><strong>ENDEREÇO:</strong> <?php echo "{$order->address_print['logradouro']}{$order->address_print['complemento']}, {$order->address_print['bairro']}"; ?></td>
+                    <td colspan="2" class="address"><strong class="label">ENDEREÇO:</strong> <span class="value"><?php echo "{$order->address_print['logradouro']}{$order->address_print['complemento']}, {$order->address_print['bairro']}"; ?></span></td>
                 </tr>
                 <tr>
-                    <td><strong>CIDADE/UF:</strong> <?php echo "{$order->address_print['cidade']} / {$order->address_print['uf']}"; ?></td>
-                    <td width="200"><strong>CEP:</strong> <?php echo $order->address_print['cep']; ?></td>
+                    <td class="city-state"><strong class="label">CIDADE/UF:</strong> <span class="value"><?php echo "{$order->address_print['cidade']} / {$order->address_print['uf']}"; ?></span></td>
+                    <td width="200" class="zip-code"><strong class="label">CEP:</strong> <span class="value"><?php echo $order->address_print['cep']; ?></span></td>
                 </tr>
             </table>
             <!-- lista de itens -->
             <table class="invoice-order-items" cellpadding="0" cellspacing="0">
                 <tr>
-                    <th colspan="3">IDENTIFICAÇÃO DOS BENS</th>
+                    <th colspan="3" class="invoice-title">IDENTIFICAÇÃO DOS BENS</th>
                 </tr>
                 <tr>
-                    <td class="label">DISCRIMINAÇÃO DO CONTEÚDO</td>
-                    <td class="label">QUANTIDADE</td>
-                    <td class="label">PESO</td>
+                    <th class="label">DISCRIMINAÇÃO DO CONTEÚDO</th>
+                    <th class="label">QUANTIDADE</th>
+                    <th class="label">PESO</th>
                 </tr>
 
                 <?php if( $this->invoice_group_items == true ){ ?>
                     <tr>
-                        <td><?php echo $group_title; ?></td>
-                        <td><?php echo $quantity_total; ?></td>
-                        <td><?php echo wc_format_weight($weight_total, 'g'); ?></td>
+                        <td class="item-value group-title"><?php echo $group_title; ?></td>
+                        <td class="item-value group-quantity"><?php echo $quantity_total; ?></td>
+                        <td class="item-value group-weight"><?php echo wc_format_weight($weight_total, 'g'); ?></td>
                     </tr>
                     <?php for($i = 0; $i < $this->invoice_group_empty_rows; $i++){ ?>
                     <tr>
-                        <td>&nbsp;</td>
-                        <td>&nbsp;</td>
-                        <td>&nbsp;</td>
+                        <td class="item-value empty">&nbsp;</td>
+                        <td class="item-value empty">&nbsp;</td>
+                        <td class="item-value empty">&nbsp;</td>
                     </tr>
                     <?php } ?>
                 <?php } else { ?>
                 <?php foreach( $order_items as $item ){ ?>
-                    <tr>
-                        <td><?php echo $item['name']; ?></td>
-                        <td><?php echo $item['quantity']; ?></td>
-                        <td><?php echo wc_format_weight($item['weight']); ?></td>
+                    <tr class="order-items">
+                        <td class="item-value item-name"><?php echo $item['name']; ?></td>
+                        <td class="item-value item-quantity"><?php echo $item['quantity']; ?></td>
+                        <td class="item-value item-weight"><?php echo wc_format_weight($item['weight']); ?></td>
                     </tr>
                 <?php } ?>
                 <?php } ?>
 
                 <tr>
-                    <td colspan="2" class="label">VALOR TOTAL <?php echo wc_price($subtotal); ?></td>
+                    <td colspan="2" class="label order-total">VALOR TOTAL <?php echo wc_price($subtotal); ?></td>
                     <td>&nbsp;</td>
                 </tr>
             </table>
             <!-- declaração -->
             <table class="invoice-disclaimer" cellpadding="0" cellspacing="0">
                 <tr>
-                    <th>DECLARAÇÃO </th>
+                    <th class="invoice-title">DECLARAÇÃO</th>
                 </tr>
                 <tr>
                     <td>
@@ -1168,6 +1168,7 @@ class Excs_Print_Orders {
             padding: 0 5px;
             width: 110px;
         }
+
         .aviso div {
             margin: 8px 0;
         }
@@ -1206,9 +1207,14 @@ class Excs_Print_Orders {
         
         .invoice table th {
             background-color: #d9d9d9;
+            border: 1px solid #000;
             font-weight: bold;
             padding: 2mm;
             text-align: center;
+        }
+        
+        .invoice table th.label {
+            background-color: transparent;
         }
         
         .invoice table td {
