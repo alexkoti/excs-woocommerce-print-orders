@@ -931,21 +931,17 @@ class Excs_Print_Orders {
                              único responsável por eventuais penalidades ou danos decorrentes de informações inverídicas. 
                         </div>
                         
-                        <table class="signature-date">
-                            <tr>
-                                <td>
-                                    <span class="underline"><?php echo $this->store_info['woocommerce_store_city']; ?></span>, 
-                                    <span class="underline"><?php echo $invoice_info['signature']['day']; ?></span> de 
-                                    <span class="underline"><?php echo $invoice_info['signature']['month']; ?></span> de 
-                                    <span class="underline"><?php echo $invoice_info['signature']['year']; ?></span>
-                                </td>
-                                <td>&nbsp;&nbsp;&nbsp;&nbsp;_______________________________</td>
-                            </tr>
-                            <tr>
-                                <td>&nbsp;</td>
-                                <td>Assinatura do Declarante/Remetente</td>
-                            </tr>
-                        </table>
+                        <div class="signature-date">
+                            <div class="date">
+                                <span class="underline"><?php echo $this->store_info['woocommerce_store_city']; ?></span>, 
+                                <span class="underline"><?php echo $invoice_info['signature']['day']; ?></span> de 
+                                <span class="underline"><?php echo $invoice_info['signature']['month']; ?></span> de 
+                                <span class="underline"><?php echo $invoice_info['signature']['year']; ?></span>
+                            </div>
+                            <div class="signature">
+                                Assinatura do Declarante/Remetente
+                            </div>
+                        </div>
                     </td>
                 </tr>
             </table>
@@ -1235,25 +1231,20 @@ class Excs_Print_Orders {
             text-indent: 12mm;
         }
         
-        .invoice table.signature-date {
+        .invoice .signature-date {
             border: none;
             margin: 0 auto;
+            padding: 0;
             width: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
-        .invoice table.signature-date td {
-            border: none;
-            padding: 1mm;
-            text-align: center;
-        }
-        
-        .invoice table.signature-date .underline {
-            text-decoration: underline;
-        }
-        
-        .invoice table.signature-date .underline:after {
-            content: '....';
-            color: transparent;
+        .invoice .signature-date .signature {
+            border-top: 1px solid;
+            margin-top: 30px;
+            padding-top: 5px;
         }
         
         .invoice table.invoice-obs ol {
