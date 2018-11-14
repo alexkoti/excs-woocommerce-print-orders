@@ -835,6 +835,7 @@ class Excs_Print_Orders {
                 'weight'   => $weight,
             );
         }
+        $weight_total = round($weight_total);
         $order_items = apply_filters( 'excs_print_orders_invoice_order_items', $order_items );
         //pre($subtotal, 'subtotal');
         //pre($order_items, 'order_items');
