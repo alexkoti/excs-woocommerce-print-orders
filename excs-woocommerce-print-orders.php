@@ -783,9 +783,11 @@ class Excs_Print_Orders {
      */
     protected function print_invoices(){
         echo apply_filters( 'excs_print_orders_single_invoice_output_start', '' );
+        $i = 0;
         foreach( $this->orders as $id => $order ){
             $invoice = $this->set_invoice( $order );
-            echo apply_filters( 'excs_print_orders_single_invoice_output', "<div class='paper invoice'><div class='invoice-inner'>{$invoice}</div></div>", $invoice);
+            echo apply_filters( 'excs_print_orders_single_invoice_output', "<div class='paper invoice'><div class='invoice-inner'>{$invoice}</div></div>", $invoice, $id, $i);
+            $i++;
         }
         echo apply_filters( 'excs_print_orders_single_invoice_output_end', '' );
     }
@@ -931,15 +933,17 @@ class Excs_Print_Orders {
                         
                         <table class="signature-date">
                             <tr>
-                                <td><span class="underline"><?php echo $this->store_info['woocommerce_store_city']; ?></span>,</td>
-                                <td><span class="underline"><?php echo $invoice_info['signature']['day']; ?></span> de</td>
-                                <td><span class="underline"><?php echo $invoice_info['signature']['month']; ?></span> de</td>
-                                <td><span class="underline"><?php echo $invoice_info['signature']['year']; ?></span></td>
+                                <td>
+                                    <span class="underline"><?php echo $this->store_info['woocommerce_store_city']; ?></span>, 
+                                    <span class="underline"><?php echo $invoice_info['signature']['day']; ?></span> de 
+                                    <span class="underline"><?php echo $invoice_info['signature']['month']; ?></span> de 
+                                    <span class="underline"><?php echo $invoice_info['signature']['year']; ?></span>
+                                </td>
                                 <td>&nbsp;&nbsp;&nbsp;&nbsp;_______________________________</td>
                             </tr>
                             <tr>
-                                <td colspan="4">&nbsp;</td>
-                                <td>Assinatura do<br />Declarante/Remetente</td>
+                                <td>&nbsp;</td>
+                                <td>Assinatura do Declarante/Remetente</td>
                             </tr>
                         </table>
                     </td>
@@ -1254,11 +1258,12 @@ class Excs_Print_Orders {
         
         .invoice table.invoice-obs ol {
             list-style-type: upper-roman;
-            padding: 0 0 0 5mm;
+            margin: 1mm 0 0;
+            padding: 0 0 0 3mm;
         }
         
         .invoice table.invoice-obs ol li {
-            padding: 0 0 0 7mm;
+            padding: 0;
         }
         
         <?php echo $this->config['css']['base']; ?>
