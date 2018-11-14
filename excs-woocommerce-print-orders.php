@@ -256,6 +256,8 @@ class Excs_Print_Orders {
     protected $invoice_group_items = false;
     
     protected $invoice_group_name = '';
+
+    protected $invoice_group_empty_rows = 0;
     
     /**
      * Configuração da impressão
@@ -274,12 +276,13 @@ class Excs_Print_Orders {
             'logo' => false,
         ),
         'admin' => array(
-            'title'               => 'Imprimir Etiquetas de endereços dos pedidos',
-            'individual_buttons'  => true,       // botões de impressão individuais para cada pedido
-            'layout_select'       => true,       // habilitar dropdown para seleção de layout, como modelos de etiquetas pimaco
-            'print_invoice'       => true,       // imprimir página de declaração de contepúdo dos correios
-            'invoice_group_items' => false,      // agrupar items na declaração
-            'invoice_group_name'  => '',         // nome para agrupamento na declaração
+            'title'                    => 'Imprimir Etiquetas de endereços dos pedidos',
+            'individual_buttons'       => true,       // botões de impressão individuais para cada pedido
+            'layout_select'            => true,       // habilitar dropdown para seleção de layout, como modelos de etiquetas pimaco
+            'print_invoice'            => true,       // imprimir página de declaração de contepúdo dos correios
+            'invoice_group_items'      => false,      // agrupar items na declaração
+            'invoice_group_name'       => '',         // nome para agrupamento na declaração
+            'invoice_group_empty_rows' => 5,          // quantidade de linhas em branco após a listagem resumida
         ),
         'css' => array(
             'base'    => '',
@@ -373,12 +376,13 @@ class Excs_Print_Orders {
         }
         
         // definir configurações da página do admin
-        $this->admin_title         = $this->config['admin']['title'];
-        $this->individual_buttons  = $this->config['admin']['individual_buttons'];
-        $this->layout_select       = $this->config['admin']['layout_select'];
-        $this->print_invoice       = $this->config['admin']['print_invoice'];
-        $this->invoice_group_items = $this->config['admin']['invoice_group_items'];
-        $this->invoice_group_name  = $this->config['admin']['invoice_group_name'];
+        $this->admin_title              = $this->config['admin']['title'];
+        $this->individual_buttons       = $this->config['admin']['individual_buttons'];
+        $this->layout_select            = $this->config['admin']['layout_select'];
+        $this->print_invoice            = $this->config['admin']['print_invoice'];
+        $this->invoice_group_items      = $this->config['admin']['invoice_group_items'];
+        $this->invoice_group_name       = $this->config['admin']['invoice_group_name'];
+        $this->invoice_group_empty_rows = $this->config['admin']['invoice_group_empty_rows'];
         
         // definir configurações do código de barras
         $this->barcode_config = $this->config['barcode_config'];
@@ -810,14 +814,17 @@ class Excs_Print_Orders {
         
         $group_title    = $this->invoice_group_name;
         $quantity_total = 0;
+        $weight_total   = 0;
         $subtotal       = 0;
         $items          = $order->get_items();
         $order_items    = array();
         foreach( $items as $id => $product ){
             $p              = $product->get_product();
+            $product_data   = $product->get_data();
             $weight         = (float) $p->get_weight() * $product_data['quantity'];
             $product_data   = $product->get_data();
             $quantity_total += $product_data['quantity'];
+            $weight_total   += $weight;
             $subtotal       += (double) $product->get_subtotal();
             $order_items[] = array(
                 'name'     => $product_data['name'],
@@ -884,9 +891,9 @@ class Excs_Print_Orders {
                     <tr>
                         <td><?php echo $group_title; ?></td>
                         <td><?php echo $quantity_total; ?></td>
-                        <td>&nbsp;</td>
+                        <td><?php echo wc_format_weight($weight_total, 'g'); ?></td>
                     </tr>
-                    <?php for($i = 0; $i <= 5; $i++){ ?>
+                    <?php for($i = 0; $i < $this->invoice_group_empty_rows; $i++){ ?>
                     <tr>
                         <td>&nbsp;</td>
                         <td>&nbsp;</td>
