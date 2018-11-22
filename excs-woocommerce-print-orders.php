@@ -573,7 +573,7 @@ class Excs_Print_Orders {
             }
             
             foreach( $this->orders as $order ){
-                echo "<div class='order layout-{$this->layout['name']}''>";
+                echo "<div class='order layout-{$this->layout['name']}'>";
                 $this->print_order( $order );
                 echo '</div>';
                 if( $cel == 2 ){
@@ -853,17 +853,15 @@ class Excs_Print_Orders {
             <!-- remetente -->
             <table class="invoice-sender" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td colspan="2" class="sender"><strong class="label">REMETENTE:</strong> <span class="value"><?php echo $this->store_info['blogname']; ?></span></td>
-                </tr>
-                <tr>
-                    <td colspan="2" class="document"><strong class="label">CPF/CNPJ:</strong> <span class="value"><?php echo $this->store_info['woocommerce_store_cpf_cnpj']; ?></span></td>
+                    <td class="sender"><strong class="label">REMETENTE:</strong> <span class="value"><?php echo $this->store_info['blogname']; ?></span></td>
+                    <td class="document"><strong class="label">CPF/CNPJ:</strong> <span class="value"><?php echo $this->store_info['woocommerce_store_cpf_cnpj']; ?></span></td>
                 </tr>
                 <tr>
                     <td colspan="2" class="address"><strong class="label">ENDEREÇO:</strong> <span class="value"><?php echo "{$this->store_info['woocommerce_store_address']}, {$this->store_info['woocommerce_store_address_2']}"; ?></span></td>
                 </tr>
                 <tr>
                     <td class="city-state"><strong class="label">CIDADE/UF:</strong> <span class="value"><?php echo "{$this->store_info['woocommerce_store_city']} / {$this->store_info['state']}"; ?></span></td>
-                    <td width="200" class="zip-code"><strong class="label">CEP:</strong> <span class="value"><?php echo $this->store_info['woocommerce_store_postcode']; ?></span></td>
+                    <td class="zip-code"><strong class="label">CEP:</strong> <span class="value"><?php echo $this->store_info['woocommerce_store_postcode']; ?></span></td>
                 </tr>
             </table>
             <!-- destinatário -->
@@ -879,7 +877,7 @@ class Excs_Print_Orders {
                 </tr>
                 <tr>
                     <td class="city-state"><strong class="label">CIDADE/UF:</strong> <span class="value"><?php echo "{$order->address_print['cidade']} / {$order->address_print['uf']}"; ?></span></td>
-                    <td width="200" class="zip-code"><strong class="label">CEP:</strong> <span class="value"><?php echo $order->address_print['cep']; ?></span></td>
+                    <td class="zip-code"><strong class="label">CEP:</strong> <span class="value"><?php echo $order->address_print['cep']; ?></span></td>
                 </tr>
             </table>
             <!-- lista de itens -->
@@ -1192,6 +1190,10 @@ class Excs_Print_Orders {
         .invoice {
             padding: 10mm;
         }
+
+        .invoice .invoice-logo {
+            font-size: 18px;
+        }
         
         .invoice .correios-logo {
             max-width: 40mm;
@@ -1231,6 +1233,10 @@ class Excs_Print_Orders {
             text-align: center;
         }
         
+        .invoice table td .label {
+            font-size: 80%;
+        }
+        
         .invoice table.invoice-disclaimer td,
         .invoice table.invoice-obs td {
             font-size: 9.5pt;
@@ -1266,11 +1272,9 @@ class Excs_Print_Orders {
         .invoice table.invoice-obs ol li {
             padding: 0;
         }
-        
-        <?php echo $this->config['css']['base']; ?>
-        
         </style>
         <?php
+        echo '<style type="text/css">' . $this->config['css']['base'] . '</style>';
     }
     
     /**
@@ -1345,10 +1349,9 @@ class Excs_Print_Orders {
             transition: 0.05s border-color ease-in-out;
         }
         
-        <?php echo $this->config['css']['preview']; ?>
-        
         </style>
         <?php
+        echo '<style type="text/css">' . $this->config['css']['preview'] . '</style>';
     }
     
     /**
