@@ -44,13 +44,14 @@ function excs_print_orders_ajax_init(){
  * 
  * 
  * @todo:
+ *  - remetente opcional
  *  - verificar nível de usuário
  *  - admin page para configurar opções
  *  - validador de CSS
  *  - adicionar opção de google-fonts
  *  - invoice padrão mais simples + adicionar invoice correios separadamente
  *  - separar exibição dos items agrupados ou separados
- *  - tradução para países
+ *  - tradução
  * 
  */
 class Excs_Print_Orders {
@@ -619,7 +620,7 @@ class Excs_Print_Orders {
         
         $shipping = $order->get_items( 'shipping' );
         foreach( $shipping as $method ){
-            if( strpos($method['method_id'], 'correios-impresso-normal') !== false ){
+            if( strpos($method['method_id'], 'correios-impresso-normal') !== false || strpos($method['method_id'], 'free_shipping') !== false ){
                 $alert = '<div class="aviso"><div><strong>Impresso Fechado</strong></div><div>Pode ser aberto <br />pela ECT</div><div>CORREIOS</div></div>';
             }
         }
