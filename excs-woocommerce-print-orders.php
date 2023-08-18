@@ -318,6 +318,9 @@ class Excs_Print_Orders {
     protected $orders = array();
     
     function __construct(){
+        
+        include_once "vendor/autoload.php";
+
         global $wp_locale;
         $this->locale = $wp_locale;
         
@@ -608,8 +611,8 @@ class Excs_Print_Orders {
     }
     
     protected function print_order( $order ){
-        include_once( 'vendors/php-barcode-generator/src/BarcodeGenerator.php');
-        include_once( 'vendors/php-barcode-generator/src/BarcodeGeneratorPNG.php');
+        //include_once( 'vendors/php-barcode-generator/src/BarcodeGenerator.php');
+        //include_once( 'vendors/php-barcode-generator/src/BarcodeGeneratorPNG.php');
         
         $address = $order->address_print;
         
