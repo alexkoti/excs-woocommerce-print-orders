@@ -643,6 +643,7 @@ class Excs_Print_Orders {
                     <span class='neighbor'>{$address['bairro']}<br /></span>
                     <span class='city-state'>{$address['cidade']} / {$address['uf']}<br /></span>
                     <span class='zip'>{$address['cep']}</span>
+                    <span class='country'>{$address['country']}</span>
                 </div>
             </div>
             {$alert}
@@ -670,6 +671,7 @@ class Excs_Print_Orders {
                 'cidade'         => $order_data['billing']['city'],
                 'uf'             => empty($order_data['billing']['state']) ? '' : " - {$order_data['billing']['state']}",
                 'cep'            => $order_data['billing']['postcode'],
+                'country'        => WC()->countries->countries[ $order->get_shipping_country() ],
             );
         }
         else{
@@ -684,6 +686,7 @@ class Excs_Print_Orders {
                 'cidade'         => $order_data['shipping']['city'],
                 'uf'             => empty($order_data['shipping']['state']) ? '' : $order_data['shipping']['state'],
                 'cep'            => $order_data['shipping']['postcode'],
+                'country'        => WC()->countries->countries[ $order->get_shipping_country() ],
             );
         }
         $address = $this->validate_address( $address );
